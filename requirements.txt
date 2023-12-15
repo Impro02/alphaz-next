@@ -1,0 +1,11 @@
+httpx
+python-jose
+dependency-injector
+python-multipart
+fastapi==0.100.0
+pydantic_settings
+pydantic==2.3
+sqlalchemy == 1.4.41
+sqlalchemy_utils
+pytz
+email-validator
