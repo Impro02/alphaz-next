@@ -1,11 +1,19 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
-version = "0.1.3.1"
+version = "0.1.3.2"
 
 setup(
     name="alphaz-next",
     version=version,
-    packages=find_packages("alphaz_next"),
+    packages=[
+        "alphaz_next",
+        "alphaz_next.libs",
+        "alphaz_next.models",
+        "alphaz_next.models.config",
+        "alphaz_next.tests",
+        "alphaz_next.tests.utils",
+        "alphaz_next.utils",
+    ],
     install_requires=[
         "sqlalchemy",
         "httpx",
