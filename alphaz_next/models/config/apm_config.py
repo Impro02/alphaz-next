@@ -1,0 +1,20 @@
+# MODULES
+from typing import Optional
+
+# PYDANTIC
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+class ApmConfig(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    server_url: Optional[str] = Field(default=None)
+    debug: bool = Field(default=True)
+    active: bool = Field(default=False)
+
+    @model_validator(mode="after")
+    def validate_model(self):
+        if self.active and self.server_url is None:
+            raise ValueError(f"server_url cannot be None if {self.active=}")
+
+        return self
