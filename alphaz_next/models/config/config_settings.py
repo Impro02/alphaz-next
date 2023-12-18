@@ -38,4 +38,4 @@ def create_config_settings(
 
             return model.model_validate(data)
 
-    return AlphaConfigSettingsSchema()
+    return AlphaConfigSettingsSchema().main_config
