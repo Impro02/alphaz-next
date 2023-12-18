@@ -19,6 +19,7 @@ class AlphaConfigSchema(BaseModel):
     node_env: str
     config_file_path: Path
     project_name: str
+    version: str
     root: str
 
     @model_validator(mode="before")

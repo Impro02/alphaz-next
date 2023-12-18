@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # MODELS
 from alphaz_next.models.config.apm_config import ApmConfig
+from alphaz_next.models.config.openapi_config_schema import OpenApiSchema
 
 
 class ApiConfigSchema(BaseModel):
@@ -18,3 +19,4 @@ class ApiConfigSchema(BaseModel):
     port: int
     workers: int
     apm: Optional[ApmConfig] = Field(default=None)
+    openapi: Optional[OpenApiSchema] = Field(default=None)
