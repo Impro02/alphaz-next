@@ -1,6 +1,8 @@
+# MODULES
 import getpass
 import os
 from typing import Any, Dict, TypedDict
+from pathlib import Path
 
 # PYDANTIC
 from pydantic import BaseModel, ConfigDict, model_validator
@@ -14,6 +16,8 @@ class ReservedConfigItem(TypedDict):
 class AlphaConfigSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    node_env: str
+    config_file_path: Path
     project_name: str
     root: str
 
