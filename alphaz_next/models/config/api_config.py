@@ -10,7 +10,7 @@ from alphaz_next.models.config.logging_config import LoggingSchema
 from alphaz_next.models.config.openapi_config_schema import OpenApiSchema
 
 
-class ApiConfigSchema(BaseModel):
+class AlphaApiConfigSchema(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
         extra="allow",
