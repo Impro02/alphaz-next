@@ -2,7 +2,7 @@
 import os
 import getpass
 from pathlib import Path
-from typing import Any, Dict, Generic, TypeVar
+from typing import Any, Dict, Generic, Type, TypeVar
 
 # PYDANTIC
 from pydantic import Field, computed_field
@@ -19,14 +19,16 @@ class AlphaConfigSettingsSchema(BaseSettings, Generic[_T]):
     node_env: str = Field(validation_alias="NODE_ENV")
     config_dir: str = Field(validation_alias="CONFIG_DIR")
 
+    _main_config_type: Type[_T]
+
     @computed_field
     @property
-    def main_config(self) -> AlphaConfigSchema:
+    def main_config(self) -> _T:
         data = open_json_file(
             path=Path(self.config_dir) / f"config.{self.node_env}.json"
         )
 
-        return AlphaConfigSchema.model_validate(data)
+        return self._main_config_type.model_validate(data)
 
 
 def replace_reserved_config(
