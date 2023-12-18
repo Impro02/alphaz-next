@@ -10,6 +10,8 @@ class ApmConfig(BaseModel):
 
     server_url: Optional[str] = Field(default=None)
     environment: Optional[str] = Field(default=None)
+    ssl_ca_cert: Optional[str] = Field(default=None)
+    ssl_verify: bool = Field(default=True)
     debug: bool = Field(default=True)
     active: bool = Field(default=False)
 
