@@ -64,9 +64,6 @@ def create_databases_config(
     databases_config_path: Path,
     reserved_config: ReservedConfigItem,
 ) -> Optional[_T]:
-    if not Path(databases_config_path).exists():
-        return None
-
     data = open_json_file(path=databases_config_path)
 
     configs: Dict[
