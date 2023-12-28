@@ -45,6 +45,12 @@ def decode_token(token: str):
 
 
 async def get_user(token: str):
+    payload = decode_token(token=token)
+
+    username: str = payload.get("sub")
+    if username is None:
+        raise InvalidCredentialsError()
+
     headers = {
         "Authorization": f"Bearer {token}",
     }
@@ -63,31 +69,18 @@ async def get_user(token: str):
     )
 
 
-async def decode_token_and_check_permissions(token: str, permissions: List[str]):
-    payload = decode_token(token=token)
-
-    username: str = payload.get("sub")
-    if username is None:
-        raise InvalidCredentialsError()
-
-    user = await get_user(token=token)
-
-    if len(permissions) > 0 and not any(
-        [user_permission in permissions for user_permission in user.permissions]
-    ):
-        raise NotEnoughPermissionsError()
-
-    return user
-
-
 async def get_user_from_jwt(
     security_scopes: SecurityScopes,
     token: Annotated[str, Depends(OAUTH2_SCHEME)],
 ) -> UserSchema:
+    permissions = security_scopes.scopes
     try:
-        return await decode_token_and_check_permissions(
-            token=token, permissions=security_scopes.scopes
-        )
+        user = await get_user(token=token)
+
+        if len(permissions) > 0 and not any(
+            [user_permission in permissions for user_permission in user.permissions]
+        ):
+            raise NotEnoughPermissionsError()
 
     except InvalidCredentialsError as ex:
         raise HTTPException(
