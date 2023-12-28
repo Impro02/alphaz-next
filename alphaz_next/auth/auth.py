@@ -30,12 +30,12 @@ from alphaz_next.core.exception import (
 INTERNAL_CONFIG = create_internal_config()
 
 API_KEY_HEADER = APIKeyHeader(name="api_key", auto_error=False)
-OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl=INTERNAL_CONFIG.auth_url)
+OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl=INTERNAL_CONFIG.token_url)
 
 
-async def decode_token_and_check_permissions(token: str, permissions: List[str]):
+def decode_token(token: str):
     try:
-        payload = jwt.decode(
+        return jwt.decode(
             token,
             INTERNAL_CONFIG.secret_key,
             algorithms=[INTERNAL_CONFIG.algorithm],
@@ -43,10 +43,8 @@ async def decode_token_and_check_permissions(token: str, permissions: List[str])
     except JWTError:
         raise InvalidCredentialsError()
 
-    username: str = payload.get("sub")
-    if username is None:
-        raise InvalidCredentialsError()
 
+async def get_user(token: str):
     headers = {
         "Authorization": f"Bearer {token}",
     }
@@ -59,10 +57,20 @@ async def decode_token_and_check_permissions(token: str, permissions: List[str])
         },
     )
 
-    user = post_process_http_response(
+    return post_process_http_response(
         response,
         schema=UserSchema,
     )
+
+
+async def decode_token_and_check_permissions(token: str, permissions: List[str]):
+    payload = decode_token(token=token)
+
+    username: str = payload.get("sub")
+    if username is None:
+        raise InvalidCredentialsError()
+
+    user = await get_user(token=token)
 
     if len(permissions) > 0 and not any(
         [user_permission in permissions for user_permission in user.permissions]
