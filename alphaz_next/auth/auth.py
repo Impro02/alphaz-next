@@ -1,6 +1,6 @@
 # MODULES
 import json
-from typing import Annotated, List
+from typing import Annotated, Any, Dict
 
 # FASTAPI
 from fastapi import Depends, HTTPException, status
@@ -33,7 +33,7 @@ API_KEY_HEADER = APIKeyHeader(name="api_key", auto_error=False)
 OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl=INTERNAL_CONFIG.token_url)
 
 
-def decode_token(token: str):
+def decode_token(token: str) -> Dict[str, Any]:
     try:
         return jwt.decode(
             token,
@@ -44,7 +44,7 @@ def decode_token(token: str):
         raise InvalidCredentialsError()
 
 
-async def get_user(token: str):
+async def get_user(token: str) -> UserSchema:
     payload = decode_token(token=token)
 
     username: str = payload.get("sub")
@@ -66,6 +66,25 @@ async def get_user(token: str):
     return post_process_http_response(
         response,
         schema=UserSchema,
+    )
+
+
+async def get_api_key(api_key: str) -> UserShortSchema:
+    headers = {
+        "api_key": api_key,
+    }
+
+    response = await make_async_request_with_retry(
+        method="POST",
+        url=INTERNAL_CONFIG.api_key_me_url,
+        **{
+            "headers": headers,
+        },
+    )
+
+    return post_process_http_response(
+        response,
+        schema=UserShortSchema,
     )
 
 
@@ -106,22 +125,8 @@ async def get_user_from_api_key(
         if api_key is None:
             raise InvalidCredentialsError()
 
-        headers = {
-            "api_key": api_key,
-        }
+        return get_api_key(api_key=api_key)
 
-        response = await make_async_request_with_retry(
-            method="POST",
-            url=INTERNAL_CONFIG.api_key_me_url,
-            **{
-                "headers": headers,
-            },
-        )
-
-        return post_process_http_response(
-            response,
-            schema=UserShortSchema,
-        )
     except InvalidCredentialsError as ex:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
