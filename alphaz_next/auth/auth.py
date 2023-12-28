@@ -150,3 +150,9 @@ async def get_user_from_api_key(
             detail=ex.args[0],
             headers={"WWW-Authenticate": "Bearer"},
         )
+    except NotEnoughPermissionsError as ex:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=ex.args[0],
+            headers={"WWW-Authenticate": "Bearer"},
+        )
