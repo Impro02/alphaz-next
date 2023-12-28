@@ -34,7 +34,7 @@ OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl=INTERNAL_CONFIG.token_url)
 
 def decode_token(token: str) -> Dict[str, Any]:
     try:
-        return jwt.decode(
+        payload = jwt.decode(
             token,
             INTERNAL_CONFIG.secret_key,
             algorithms=[INTERNAL_CONFIG.algorithm],
@@ -42,13 +42,15 @@ def decode_token(token: str) -> Dict[str, Any]:
     except JWTError:
         raise InvalidCredentialsError()
 
-
-async def get_user(token: str) -> UserSchema:
-    payload = decode_token(token=token)
-
     username: str = payload.get("sub")
     if username is None:
         raise InvalidCredentialsError()
+
+    return username
+
+
+async def get_user(token: str) -> UserSchema:
+    decode_token(token=token)
 
     headers = {
         "Authorization": f"Bearer {token}",
