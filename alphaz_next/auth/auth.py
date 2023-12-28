@@ -128,7 +128,7 @@ async def get_user_from_api_key(
         if api_key is None:
             raise InvalidCredentialsError()
 
-        return get_api_key(api_key=api_key)
+        return await get_api_key(api_key=api_key)
 
     except InvalidCredentialsError as ex:
         raise HTTPException(
