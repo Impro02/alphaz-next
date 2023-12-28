@@ -89,7 +89,7 @@ async def get_api_key(api_key: str) -> UserShortSchema:
     )
 
 
-async def check_user_permissions(permissions: List[str], user_permissions: List[str]):
+def check_user_permissions(permissions: List[str], user_permissions: List[str]) -> None:
     if len(permissions) > 0 and not any(
         [user_permission in permissions for user_permission in user_permissions]
     ):
