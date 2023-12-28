@@ -1,15 +1,19 @@
 from setuptools import setup
 
-version = "0.1.11"
+version = "0.2.0"
 
 setup(
     name="alphaz-next",
     version=version,
     packages=[
         "alphaz_next",
+        "alphaz_next.auth",
+        "alphaz_next.core",
         "alphaz_next.libs",
         "alphaz_next.models",
+        "alphaz_next.models.auth",
         "alphaz_next.models.config",
+        "alphaz_next.models.config._base",
         "alphaz_next.tests",
         "alphaz_next.tests.utils",
         "alphaz_next.utils",
