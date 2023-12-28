@@ -1,5 +1,5 @@
 # MODULES
-from typing import Annotated, Any, Dict, Tuple
+from typing import Annotated, Any, Dict, List, Tuple
 
 # FASTAPI
 from fastapi import Depends, HTTPException, status
@@ -89,18 +89,24 @@ async def get_api_key(api_key: str) -> UserShortSchema:
     )
 
 
+async def check_user_permissions(permissions: List[str], user_permissions: List[str]):
+    if len(permissions) > 0 and not any(
+        [user_permission in permissions for user_permission in user_permissions]
+    ):
+        raise NotEnoughPermissionsError()
+
+
 async def get_user_from_jwt(
     security_scopes: SecurityScopes,
     token: Annotated[str, Depends(OAUTH2_SCHEME)],
 ) -> UserSchema:
-    permissions = security_scopes.scopes
     try:
         user = await get_user(token=token)
 
-        if len(permissions) > 0 and not any(
-            [user_permission in permissions for user_permission in user.permissions]
-        ):
-            raise NotEnoughPermissionsError()
+        check_user_permissions(
+            permissions=security_scopes.scopes,
+            user_permissions=user.permissions,
+        )
 
         return user
 
@@ -119,6 +125,7 @@ async def get_user_from_jwt(
 
 
 async def get_user_from_api_key(
+    security_scopes: SecurityScopes,
     api_key: Annotated[
         str,
         Depends(API_KEY_HEADER),
@@ -128,7 +135,14 @@ async def get_user_from_api_key(
         if api_key is None:
             raise InvalidCredentialsError()
 
-        return await get_api_key(api_key=api_key)
+        user = await get_api_key(api_key=api_key)
+
+        check_user_permissions(
+            permissions=security_scopes.scopes,
+            user_permissions=user.permissions,
+        )
+
+        return user
 
     except InvalidCredentialsError as ex:
         raise HTTPException(
