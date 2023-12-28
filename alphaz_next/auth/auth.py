@@ -1,5 +1,4 @@
 # MODULES
-import json
 from typing import Annotated, Any, Dict
 
 # FASTAPI
@@ -106,13 +105,13 @@ async def get_user_from_jwt(
     except InvalidCredentialsError as ex:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=json.dumps(ex.args),
+            detail=ex.args[0],
             headers={"WWW-Authenticate": "Bearer"},
         )
     except NotEnoughPermissionsError as ex:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=json.dumps(ex.args),
+            detail=ex.args[0],
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -132,6 +131,6 @@ async def get_user_from_api_key(
     except InvalidCredentialsError as ex:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=json.dumps(ex.args),
+            detail=ex.args[0],
             headers={"WWW-Authenticate": "Bearer"},
         )
