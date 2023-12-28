@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = "0.2.2"
+version = "0.2.3"
 
 setup(
     name="alphaz-next",
@@ -16,6 +16,7 @@ setup(
         "alphaz_next.models.config._base",
         "alphaz_next.tests",
         "alphaz_next.tests.utils",
+        "alphaz_next.tests.utils.mocking",
         "alphaz_next.utils",
     ],
     install_requires=[
