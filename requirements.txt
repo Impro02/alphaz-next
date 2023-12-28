@@ -10,3 +10,4 @@ sqlalchemy_utils
 pytz
 email-validator
 deepdiff
+unidecode
