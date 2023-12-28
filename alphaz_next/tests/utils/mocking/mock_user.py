@@ -12,8 +12,9 @@ GET_API_KEY_PATH = "alphaz_next.auth.auth.get_api_key"
 def get_mocked_user(
     id: int = 1,
     username: str = "foo",
-    short_login: str = "bar",
-    full_name: str = "zoo",
+    email: Optional[str] = "foo@st.com",
+    short_login: Optional[str] = "bar",
+    full_name: Optional[str] = "zoo",
     location: Optional[str] = None,
     country: Optional[str] = None,
     region: Optional[str] = None,
@@ -25,6 +26,7 @@ def get_mocked_user(
     return UserSchema(
         id=id,
         username=username,
+        email=email,
         short_login=short_login,
         full_name=full_name,
         location=location,
