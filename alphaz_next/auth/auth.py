@@ -101,6 +101,8 @@ async def get_user_from_jwt(
         ):
             raise NotEnoughPermissionsError()
 
+        return user
+
     except InvalidCredentialsError as ex:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
