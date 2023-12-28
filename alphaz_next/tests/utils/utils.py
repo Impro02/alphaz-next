@@ -14,10 +14,12 @@ from unittest import TestCase
 # FASTAPI
 from fastapi.testclient import TestClient
 
+# PYDANTIC
+from pydantic import BaseModel, Field
+
 # HTTPX
 from httpx import Response
 from httpx._types import HeaderTypes, QueryParamTypes
-from pydantic import BaseModel, Field
 
 
 class ExpectedResponse(BaseModel):
@@ -43,16 +45,16 @@ class ResponseFormatEnum(Enum):
     NO_CONTENT = "no_content"
 
 
-class TestFastApi(TestCase):
+class AlphaTestCase(TestCase):
     __RESET_BEFORE_NEXT_TEST__: bool = False
 
     def setUp(self):
-        if not TestFastApi.__RESET_BEFORE_NEXT_TEST__:
+        if not AlphaTestCase.__RESET_BEFORE_NEXT_TEST__:
             return
 
         self.reset_tables()
 
-        TestFastApi.__RESET_BEFORE_NEXT_TEST__ = False
+        AlphaTestCase.__RESET_BEFORE_NEXT_TEST__ = False
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -61,7 +63,7 @@ class TestFastApi(TestCase):
         cls.client = TestClient(cls.app)
 
     def mark_reset_before_next_test(self):
-        TestFastApi.__RESET_BEFORE_NEXT_TEST__ = True
+        AlphaTestCase.__RESET_BEFORE_NEXT_TEST__ = True
 
     @classmethod
     def reset_tables(cls):
