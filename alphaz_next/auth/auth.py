@@ -1,5 +1,5 @@
 # MODULES
-from typing import Annotated, Any, Dict
+from typing import Annotated, Any, Dict, Tuple
 
 # FASTAPI
 from fastapi import Depends, HTTPException, status
@@ -32,7 +32,7 @@ API_KEY_HEADER = APIKeyHeader(name="api_key", auto_error=False)
 OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl=INTERNAL_CONFIG.token_url)
 
 
-def decode_token(token: str) -> Dict[str, Any]:
+def decode_token(token: str) -> Tuple[str, Dict[str, Any]]:
     try:
         payload = jwt.decode(
             token,
@@ -46,7 +46,7 @@ def decode_token(token: str) -> Dict[str, Any]:
     if username is None:
         raise InvalidCredentialsError()
 
-    return username
+    return username, payload
 
 
 async def get_user(token: str) -> UserSchema:
