@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = "0.2.8.2"
+version = "0.2.8.3"
 
 setup(
     name="alphaz-next",
