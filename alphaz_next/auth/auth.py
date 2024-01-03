@@ -1,5 +1,5 @@
 # MODULES
-from typing import Annotated, Any, Dict, List, Tuple
+from typing import Annotated, Any, Dict, List
 
 # FASTAPI
 from fastapi import Depends, HTTPException, status
