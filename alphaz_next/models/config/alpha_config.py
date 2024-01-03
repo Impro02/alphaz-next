@@ -16,7 +16,7 @@ class ReservedConfigItem(TypedDict):
 class AlphaConfigSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    node_env: str
+    environment: str
     config_file_path: Path
     project_name: str
     version: str
