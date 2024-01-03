@@ -1,6 +1,6 @@
 # MODULES
 from enum import Enum
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # PYDANTIC
 from pydantic import BaseModel
@@ -75,6 +75,17 @@ def get_mapper_enum(model, schema: BaseModel) -> Tuple[Dict[str, Optional[str]],
 
 def remove_t_from_date_str(date_str: str) -> str:
     return date_str.replace("T", " ")
+
+
+def extract_value_from_enum(data: Union[Enum, List[Enum]]):
+    if isinstance(data, list):
+        return [item.value for item in data]
+
+    return data.value
+
+
+def extract_order_with_alias(items: Union[List[Enum], Enum], mapper: Dict[str, Any]):
+    return [mapper.get(item) or item for item in extract_value_from_enum(items)]
 
 
 def nonesorter(a):
