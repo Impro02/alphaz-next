@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = "0.2.8.4"
+version = "0.2.8.5"
 
 setup(
     name="alphaz-next",
@@ -28,7 +28,7 @@ setup(
         "fastapi==0.100.0",
         "pydantic_settings",
         "pydantic==2.3",
-        "sqlalchemy == 1.4.41",
+        "sqlalchemy > 1.4.41",
         "sqlalchemy_utils",
         "pytz",
         "email-validator",
