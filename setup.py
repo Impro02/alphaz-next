@@ -1,6 +1,9 @@
 from setuptools import setup
 
-version = "0.2.8.6"
+version = "0.2.8.7"
+
+with open("requirements.txt") as f:
+    required_packages = f.read().splitlines()
 
 setup(
     name="alphaz-next",
@@ -19,20 +22,7 @@ setup(
         "alphaz_next.tests.utils.mocking",
         "alphaz_next.utils",
     ],
-    install_requires=[
-        "sqlalchemy",
-        "httpx",
-        "python-jose",
-        "dependency-injector",
-        "python-multipart",
-        "fastapi==0.100.0",
-        "pydantic_settings",
-        "pydantic==2.3",
-        "sqlalchemy > 1.4.41",
-        "sqlalchemy_utils",
-        "pytz",
-        "email-validator",
-    ],
+    install_requires=required_packages,
     license="MIT",
     author="Maxime MARTIN",
     author_email="maxime.martin02@hotmail.fr",
