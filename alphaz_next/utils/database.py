@@ -8,7 +8,7 @@ from datetime import datetime
 from logging import Logger
 
 # SQLALCHEMY
-from sqlalchemy import create_engine, orm, Table
+from sqlalchemy import create_engine, orm, Table, text
 from sqlalchemy.orm import Session, DeclarativeMeta
 from sqlalchemy.schema import sort_tables
 from sqlalchemy.inspection import inspect
@@ -67,7 +67,7 @@ class AlphaDatabase:
         with self.session_factory() as session:
             for view in view_names or []:
                 if view.name.lower() in current_view_names:
-                    session.execute(f"DROP VIEW {view}")
+                    session.execute(text(f"DROP VIEW {view}"))
 
         self._base.metadata.create_all(self._engine)
 
