@@ -16,7 +16,7 @@ from alphaz_next.models.config.alpha_config import (
 )
 
 
-class AlphaDatasaseConfigSchema(BaseModel):
+class AlphaDatabaseConfigSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     ini: bool = False
@@ -29,7 +29,7 @@ class AlphaDatasaseConfigSchema(BaseModel):
         raise NotImplementedError()
 
 
-class AlphaDatabaseOracleConfigSchema(AlphaDatasaseConfigSchema):
+class AlphaDatabaseOracleConfigSchema(AlphaDatabaseConfigSchema):
     host: str
     username: str
     password: str
@@ -46,7 +46,7 @@ class AlphaDatabaseOracleConfigSchema(AlphaDatasaseConfigSchema):
         )
 
 
-class AlphaDatabaseSqliteConfigSchema(AlphaDatasaseConfigSchema):
+class AlphaDatabaseSqliteConfigSchema(AlphaDatabaseConfigSchema):
     path: str
 
     @computed_field
