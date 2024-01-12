@@ -2,7 +2,7 @@
 from typing import Annotated, Any, Dict, List
 
 # FASTAPI
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, status
 from fastapi.security import APIKeyHeader, OAuth2PasswordBearer, SecurityScopes
 
 # JOSE
@@ -24,6 +24,7 @@ from alphaz_next.models.config._base.internal_config_settings import (
 from alphaz_next.core.exception import (
     InvalidCredentialsError,
     NotEnoughPermissionsError,
+    HTTPException,
 )
 
 INTERNAL_CONFIG = create_internal_config()
@@ -113,14 +114,22 @@ async def get_user_from_jwt(
     except InvalidCredentialsError as ex:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ex.args[0],
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={
+                "WWW-Authenticate": "Bearer",
+            },
+            ext_headers={
+                "status_description": ex.args,
+            },
         )
     except NotEnoughPermissionsError as ex:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=ex.args[0],
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={
+                "WWW-Authenticate": "Bearer",
+            },
+            ext_headers={
+                "status_description": ex.args,
+            },
         )
 
 
@@ -147,12 +156,20 @@ async def get_user_from_api_key(
     except InvalidCredentialsError as ex:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ex.args[0],
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={
+                "WWW-Authenticate": "Bearer",
+            },
+            ext_headers={
+                "status_description": ex.args,
+            },
         )
     except NotEnoughPermissionsError as ex:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=ex.args[0],
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={
+                "WWW-Authenticate": "Bearer",
+            },
+            ext_headers={
+                "status_description": ex.args,
+            },
         )
