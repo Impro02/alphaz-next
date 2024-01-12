@@ -381,7 +381,7 @@ class AlphaTestCase(TestCase):
     ):
         header_status_description = response.headers.get("x-status-description", [])
         if isinstance(header_status_description, str):
-            header_status_description = json.load(
+            header_status_description = json.loads(
                 response.headers.get("x-status-description")
             )
 
