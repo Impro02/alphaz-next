@@ -34,9 +34,6 @@ class APiResponse(BaseModel):
     status_code: int
     data: Optional[Any]
     headers: Dict
-    header_status_description: Optional[str]
-    header_pagination: Optional[str]
-    header_warning: Optional[bool]
 
 
 class ResponseFormatEnum(Enum):
@@ -382,15 +379,20 @@ class AlphaTestCase(TestCase):
         response: APiResponse,
         ignore_keys: bool = True,
     ):
-        header_status_description = (
-            response.header_status_description.split("|")
-            if response.header_status_description is not None
-            else []
-        )
+        header_status_description = response.headers.get("x-status-description")
+        if header_status_description is not None:
+            header_status_description = json.load(
+                response.headers.get("x-status-description")
+            )
+
+            if not isinstance(header_status_description, list):
+                header_status_description = [header_status_description]
 
         self.assertEqual(expected_response.status_code, response.status_code)
-        self.assertEqual(expected_response.pagination, response.header_pagination)
-        self.assertEqual(expected_response.warning, response.header_warning)
+        self.assertEqual(
+            expected_response.pagination, response.headers.get("x-pagination")
+        )
+        self.assertEqual(expected_response.warning, response.headers.get("x-warning"))
         self.assertEqual(
             expected_response.status_description,
             header_status_description,
