@@ -379,8 +379,8 @@ class AlphaTestCase(TestCase):
         response: APiResponse,
         ignore_keys: bool = True,
     ):
-        header_status_description = response.headers.get("x-status-description")
-        if header_status_description is not None:
+        header_status_description = response.headers.get("x-status-description", [])
+        if isinstance(header_status_description, str):
             header_status_description = json.load(
                 response.headers.get("x-status-description")
             )
