@@ -392,7 +392,9 @@ class AlphaTestCase(TestCase):
         self.assertEqual(
             expected_response.pagination, response.headers.get("x-pagination")
         )
-        self.assertEqual(expected_response.warning, response.headers.get("x-warning"))
+        self.assertEqual(
+            "1" if expected_response.warning else "0", response.headers.get("x-warning")
+        )
         self.assertEqual(
             expected_response.status_description,
             header_status_description,
