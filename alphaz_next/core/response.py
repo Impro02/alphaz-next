@@ -1,12 +1,14 @@
 # MODULES
-import json
-from typing import Any, Dict, List, Optional, TypedDict, Union
+from typing import Any, Dict
 
 # FASTAPI
 from fastapi.responses import JSONResponse
 
 # STARLETTE
 from starlette.background import BackgroundTask
+
+# CORE
+from alphaz_next.core._base import extend_headers, ExtHeaders
 
 try:
     import ujson
@@ -19,12 +21,6 @@ except ImportError:  # pragma: nocover
     orjson = None  # type: ignore
 
 
-class ExtHeaders(TypedDict):
-    pagination: Optional[str]
-    status_description: Optional[Union[str, List[str]]]
-    warning: Optional[bool]
-
-
 class AlphaJSONResponse(JSONResponse):
     def __init__(
         self,
@@ -35,33 +31,12 @@ class AlphaJSONResponse(JSONResponse):
         media_type: str | None = None,
         background: BackgroundTask | None = None,
     ) -> None:
-        self._ext_headers = {}
-        self._access_control_expose_headers = []
-
-        if (pagination := ext_headers.get("pagination")) is not None:
-            self._add_ext_header("x-pagination", pagination)
-        if (status_description := ext_headers.get("status_description")) is not None:
-            self._add_ext_header("x-status-description", json.dumps(status_description))
-        if (warning := ext_headers.get("warning")) is not None:
-            self._add_ext_header("x-warning", "1" if warning else "0")
-
-        if self._ext_headers is not None:
-            headers = headers or {}
-
-            headers["access-control-expose-headers"] = ", ".join(
-                [
-                    *headers.get("access-control-expose-headers", "").split(", "),
-                    *self._access_control_expose_headers,
-                ]
-            )
-
-            headers.update(self._ext_headers)
+        headers = extend_headers(
+            headers=headers,
+            ext_headers=ext_headers,
+        )
 
         super().__init__(content, status_code, headers, media_type, background)
-
-    def _add_ext_header(self, name: str, value: str) -> None:
-        self._ext_headers[name] = value
-        self._access_control_expose_headers.append(name)
 
 
 class AlphaUJSONResponse(AlphaJSONResponse):
