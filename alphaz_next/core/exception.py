@@ -2,7 +2,7 @@
 from typing import Any, Dict
 
 # FASTAPI
-from fastapi.exceptions import HTTPException
+from fastapi.exceptions import HTTPException as _HTTPException
 
 # CORE
 from alphaz_next.core._base import extend_headers, ExtHeaders
@@ -18,7 +18,7 @@ class NotEnoughPermissionsError(Exception):
         super().__init__("Not enough permissions")
 
 
-class AlphaHTTPException(HTTPException):
+class HTTPException(_HTTPException):
     def __init__(
         self,
         status_code: int,
