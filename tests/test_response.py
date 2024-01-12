@@ -2,7 +2,7 @@
 from unittest import TestCase
 
 # ALPHAZ_NEXT
-from alphaz_next.core.response import AlphaJSONResponse
+from alphaz_next.core.response import JSONResponse
 
 
 class TestAlphaResponse(TestCase):
@@ -26,7 +26,7 @@ class TestAlphaResponse(TestCase):
             "warning": True,
         }
         # WHEN
-        res = AlphaJSONResponse(
+        res = JSONResponse(
             content="Foo",
             headers=headers,
             ext_headers=ext_headers,
