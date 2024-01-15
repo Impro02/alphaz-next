@@ -379,6 +379,12 @@ class AlphaTestCase(TestCase):
         response: APiResponse,
         ignore_keys: bool = True,
     ):
+        self.assertEqual(expected_response.status_code, response.status_code)
+
+        self.assertEqual(
+            expected_response.pagination, response.headers.get("x-pagination")
+        )
+
         header_status_description = response.headers.get("x-status-description", [])
         if isinstance(header_status_description, str):
             header_status_description = json.loads(
@@ -388,17 +394,17 @@ class AlphaTestCase(TestCase):
             if not isinstance(header_status_description, list):
                 header_status_description = [header_status_description]
 
-        self.assertEqual(expected_response.status_code, response.status_code)
-        self.assertEqual(
-            expected_response.pagination, response.headers.get("x-pagination")
-        )
-        self.assertEqual(
-            "1" if expected_response.warning else "0", response.headers.get("x-warning")
-        )
         self.assertEqual(
             expected_response.status_description,
             header_status_description,
         )
+
+        expected_response_warning = None
+        if expected_response.warning is not None:
+            expected_response_warning = "1" if expected_response.warning else "0"
+
+        self.assertEqual(expected_response_warning, response.headers.get("x-warning"))
+
         if isinstance(expected_response.data, list):
             self.assertListOfDictEqual(
                 expected_response.data,
