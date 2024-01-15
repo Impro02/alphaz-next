@@ -2,7 +2,7 @@
 from unittest import TestCase
 
 # ALPHAZ_NEXT
-from alphaz_next.core.response import JSONResponse
+from alphaz_next.core.responses import JSONResponse
 
 
 class TestAlphaResponse(TestCase):
