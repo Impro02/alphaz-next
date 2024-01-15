@@ -2,23 +2,18 @@
 from typing import Any, Dict, Mapping
 
 # FASTAPI
-from fastapi.responses import JSONResponse as _JSONResponse, Response as _Response
+from fastapi.responses import (
+    JSONResponse as _JSONResponse,
+    UJSONResponse as _UJSONResponse,
+    ORJSONResponse as _ORJSONResponse,
+    Response as _Response,
+)
 
 # STARLETTE
 from starlette.background import BackgroundTask
 
 # CORE
 from alphaz_next.core._base import extend_headers, ExtHeaders
-
-try:
-    import ujson
-except ImportError:  # pragma: nocover
-    ujson = None  # type: ignore
-
-try:
-    import orjson
-except ImportError:  # pragma: nocover
-    orjson = None  # type: ignore
 
 
 class Response(_Response):
@@ -57,15 +52,37 @@ class JSONResponse(_JSONResponse):
         super().__init__(content, status_code, headers, media_type, background)
 
 
-class UJSONResponse(JSONResponse):
-    def render(self, content: Any) -> bytes:
-        assert ujson is not None, "ujson must be installed to use UJSONResponse"
-        return ujson.dumps(content, ensure_ascii=False).encode("utf-8")
-
-
-class ORJSONResponse(JSONResponse):
-    def render(self, content: Any) -> bytes:
-        assert orjson is not None, "orjson must be installed to use ORJSONResponse"
-        return orjson.dumps(
-            content, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY
+class UJSONResponse(_UJSONResponse):
+    def __init__(
+        self,
+        content: Any,
+        status_code: int = 200,
+        headers: Dict[str, str] | None = None,
+        ext_headers: ExtHeaders | None = None,
+        media_type: str | None = None,
+        background: BackgroundTask | None = None,
+    ) -> None:
+        headers = extend_headers(
+            headers=headers,
+            ext_headers=ext_headers,
         )
+
+        super().__init__(content, status_code, headers, media_type, background)
+
+
+class ORJSONResponse(_ORJSONResponse):
+    def __init__(
+        self,
+        content: Any,
+        status_code: int = 200,
+        headers: Dict[str, str] | None = None,
+        ext_headers: ExtHeaders | None = None,
+        media_type: str | None = None,
+        background: BackgroundTask | None = None,
+    ) -> None:
+        headers = extend_headers(
+            headers=headers,
+            ext_headers=ext_headers,
+        )
+
+        super().__init__(content, status_code, headers, media_type, background)
