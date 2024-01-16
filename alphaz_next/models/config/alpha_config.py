@@ -7,6 +7,9 @@ from pathlib import Path
 # PYDANTIC
 from pydantic import BaseModel, ConfigDict, model_validator
 
+# MODELS
+from alphaz_next.models.config.api_config import AlphaApiConfigSchema
+
 
 class ReservedConfigItem(TypedDict):
     root: str
@@ -21,6 +24,8 @@ class AlphaConfigSchema(BaseModel):
     project_name: str
     version: str
     root: str
+
+    api_config: AlphaApiConfigSchema
 
     @model_validator(mode="before")
     @classmethod
