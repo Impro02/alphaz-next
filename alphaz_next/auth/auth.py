@@ -21,7 +21,7 @@ from alphaz_next.models.config._base.internal_config_settings import (
 )
 
 # EXCEPTIONS
-from alphaz_next.core.exception import (
+from alphaz_next.core.exceptions import (
     InvalidCredentialsError,
     NotEnoughPermissionsError,
     HTTPException,
