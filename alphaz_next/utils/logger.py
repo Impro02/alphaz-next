@@ -30,6 +30,7 @@ class AlphaLogger:
         name: str,
         directory: str,
         level: int = logging.INFO,
+        stream_output: bool = True,
         when: str = "midnight",
         interval: int = 1,
         backup_count: int = 10,
@@ -66,7 +67,7 @@ class AlphaLogger:
         self._logger = self._create_logger(
             name=name,
             file_name=file_name,
-            stream_output=True,
+            stream_output=stream_output,
             **logger_config,
         )
         self._error_logger = self._create_logger(
