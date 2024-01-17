@@ -52,8 +52,9 @@ def make_request_with_retry(
                 )
         except httpx.ReadTimeout as ex:
             if retry_count == max_retries:
-                message = f"Unable to contact server after several retries {item_repr}"
-                raise RuntimeError(message) from ex
+                raise RuntimeError(
+                    f"Unable to contact server after {retry_count} retries {item_repr}"
+                ) from ex
 
             wait_time = 2**retry_count
             time.sleep(wait_time)
@@ -64,12 +65,13 @@ def make_request_with_retry(
             else:
                 raise ex
         except Exception as ex:
-            message = "An unknown error occurs while contacting external server"
-            raise RuntimeError(message) from ex
+            raise RuntimeError(
+                f"An unknown error occurs while contacting external server {item_repr}"
+            ) from ex
         else:
             return response
 
-    raise RuntimeError("Maximum number of retries exceeded")
+    raise RuntimeError(f"Maximum number of retries exceeded {item_repr}")
 
 
 async def make_async_request_with_retry(
@@ -113,8 +115,9 @@ async def make_async_request_with_retry(
                 )
         except httpx.ReadTimeout as ex:
             if retry_count == max_retries:
-                message = f"Unable to contact server after several retries {item_repr}"
-                raise RuntimeError(message) from ex
+                raise RuntimeError(
+                    f"Unable to contact server after {retry_count} retries {item_repr}"
+                ) from ex
 
             wait_time = 2**retry_count
             await asyncio.sleep(wait_time)
@@ -125,12 +128,13 @@ async def make_async_request_with_retry(
             else:
                 raise ex
         except Exception as ex:
-            message = "An unknown error occurs while contacting external server"
-            raise RuntimeError(message) from ex
+            raise RuntimeError(
+                f"An unknown error occurs while contacting external server {item_repr}"
+            ) from ex
         else:
             return response
 
-    raise RuntimeError("Maximum number of retries exceeded")
+    raise RuntimeError(f"Maximum number of retries exceeded {item_repr}")
 
 
 T = TypeVar("T", bound=BaseModel)
