@@ -54,7 +54,7 @@ def make_request_with_retry(
             if retry_count == max_retries:
                 raise RuntimeError(
                     f"Unable to contact server after {retry_count} retries {item_repr}"
-                ) from ex
+                )
 
             wait_time = 2**retry_count
             time.sleep(wait_time)
@@ -67,7 +67,7 @@ def make_request_with_retry(
         except Exception as ex:
             raise RuntimeError(
                 f"An unknown error occurs while contacting external server {item_repr}"
-            ) from ex
+            )
         else:
             return response
 
@@ -117,7 +117,7 @@ async def make_async_request_with_retry(
             if retry_count == max_retries:
                 raise RuntimeError(
                     f"Unable to contact server after {retry_count} retries {item_repr}"
-                ) from ex
+                )
 
             wait_time = 2**retry_count
             await asyncio.sleep(wait_time)
@@ -130,7 +130,7 @@ async def make_async_request_with_retry(
         except Exception as ex:
             raise RuntimeError(
                 f"An unknown error occurs while contacting external server {item_repr}"
-            ) from ex
+            )
         else:
             return response
 
