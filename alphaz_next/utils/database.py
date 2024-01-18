@@ -8,7 +8,7 @@ from datetime import datetime
 from logging import Logger
 
 # SQLALCHEMY
-from sqlalchemy import create_engine, orm, Table, text
+from sqlalchemy import create_engine, orm, Table, text, MetaData
 from sqlalchemy.orm import Session, DeclarativeMeta
 from sqlalchemy.schema import sort_tables
 from sqlalchemy.inspection import inspect
@@ -25,8 +25,6 @@ class _DataBaseConfigTypedDict(TypedDict):
     ini: bool
     init_database_dir_json: Optional[str]
     create_on_start: bool
-    view_names: List[str]
-    pool_size: int
     connect_args: Optional[Dict]
 
 
@@ -34,8 +32,9 @@ class AlphaDatabase:
     def __init__(
         self,
         databases_config: _DataBaseConfigTypedDict,
-        base: DeclarativeMeta,
         logger: Logger,
+        base: DeclarativeMeta,
+        metadata_views: Optional[List[MetaData]] = None,
     ) -> None:
         self._database_config = databases_config
         self._engine = create_engine(
@@ -43,8 +42,9 @@ class AlphaDatabase:
             echo=False,
             connect_args=self._database_config.get("connect_args") or {},
         )
-        self._base = base
         self._logger = logger
+        self._base = base
+        self._metadata_views = metadata_views
 
         self._session_factory = orm.sessionmaker(
             autocommit=False,
@@ -52,8 +52,18 @@ class AlphaDatabase:
             bind=self._engine,
         )
 
+        self._views = [
+            table
+            for metadata in self._metadata_views or []
+            for table in metadata.sorted_tables
+        ]
+
         if self._database_config.get("create_on_start"):
-            self.create_database(view_names=self._database_config.get("view_names"))
+            self.create_database()
+
+    @property
+    def views(self) -> List[Table]:
+        return self._views
 
     @property
     def ini(self):
@@ -63,15 +73,13 @@ class AlphaDatabase:
     def init_database_dir_json(self):
         return self._database_config.get("init_database_dir_json")
 
-    def create_database(
-        self, view_names: List[Table] = None
-    ) -> None:  # TODO find a way to get view names automatically
+    def create_database(self) -> None:
         insp = inspect(self._engine)
         current_view_names = [item.lower() for item in insp.get_view_names()]
 
         with self.session_factory() as session:
-            for view in view_names or []:
-                if view.name.lower() in current_view_names:
+            for view in self.views:
+                if view.key.lower() in current_view_names:
                     session.execute(text(f"DROP VIEW {view}"))
 
         self._base.metadata.create_all(self._engine)
