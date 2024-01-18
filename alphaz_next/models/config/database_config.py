@@ -1,6 +1,6 @@
 # MODULES
 from pathlib import Path
-from typing import Dict, Optional, Type, TypeVar, Union
+from typing import Dict, List, Optional, Type, TypeVar, Union
 import warnings
 
 # PYDANTIC
@@ -22,6 +22,8 @@ class AlphaDatabaseConfigSchema(BaseModel):
     ini: bool = False
     init_database_dir_json: Optional[str] = Field(default=None)
     connect_args: Optional[Dict] = Field(default=None)
+    create_on_start: bool = False
+    view_names: List[str] = Field(default_factory=lambda: [])
 
     @computed_field
     @property

@@ -2,7 +2,7 @@
 import os
 import pytz
 import re
-from typing import Dict, Generator, List, Optional, TypedDict
+from typing import Any, Dict, Generator, List
 from pathlib import Path
 from datetime import datetime
 from logging import Logger
@@ -16,30 +16,27 @@ from sqlalchemy.inspection import inspect
 # CONTEXTLIB
 from contextlib import contextmanager
 
+# MODELS
+from alphaz_next.models.config.database_config import AlphaDatabaseConfigSchema
+
 # LIBS
 from alphaz_next.libs.file_lib import open_json_file
-
-
-class DataBaseConfigTypedDict(TypedDict):
-    connection_string: str
-    ini: bool
-    init_database_dir_json: Optional[str]
-    pool_size: int
-    connect_args: Optional[Dict]
 
 
 class AlphaDatabase:
     def __init__(
         self,
-        databases_config: DataBaseConfigTypedDict,
+        databases_config: Dict[str, Any],
         base: DeclarativeMeta,
         logger: Logger,
     ) -> None:
-        self._database_config = databases_config
+        self._database_config = AlphaDatabaseConfigSchema.model_validate(
+            databases_config
+        )
         self._engine = create_engine(
-            self._database_config.get("connection_string"),
+            self._database_config.connection_string,
             echo=False,
-            connect_args=self._database_config.get("connect_args") or {},
+            connect_args=self._database_config.connect_args or {},
         )
         self._base = base
         self._logger = logger
@@ -50,13 +47,16 @@ class AlphaDatabase:
             bind=self._engine,
         )
 
+        if self._database_config.create_on_start:
+            self.create_database(view_names=self._database_config.view_names)
+
     @property
     def ini(self):
-        return self._database_config.get("ini")
+        return self._database_config.ini
 
     @property
     def init_database_dir_json(self):
-        return self._database_config.get("init_database_dir_json")
+        return self._database_config.init_database_dir_json
 
     def create_database(
         self, view_names: List[Table] = None
