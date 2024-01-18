@@ -21,6 +21,9 @@ from pydantic import BaseModel, Field
 from httpx import Response
 from httpx._types import HeaderTypes, QueryParamTypes
 
+# LIBS
+from alphaz_next.libs.file_lib import save_file, save_json_file
+
 
 class ExpectedResponse(BaseModel):
     status_code: int
@@ -302,11 +305,11 @@ class AlphaTestCase(TestCase):
             case response_format.JSON:
                 data = response.json()
                 if saved_path is not None:
-                    save_data_json(saved_path, data)
+                    save_json_file(saved_path, data)
             case response_format.BYTES:
                 data = response.content
                 if saved_path is not None:
-                    save_data_byte(saved_path, data)
+                    save_file(saved_path, data)
             case response_format.NO_CONTENT:
                 data = None
             case _:
@@ -354,14 +357,14 @@ class AlphaTestCase(TestCase):
     ):
         ignored_keys = [re.compile(item) for item in ignored_keys or []]
 
-        ddiff = DeepDiff(
+        deep_diff = DeepDiff(
             first,
             second,
             exclude_regex_paths=ignored_keys,
             ignore_numeric_type_changes=True,
         )
 
-        assert not ddiff, f"Dictionaries are not equal: {ddiff}"
+        assert not deep_diff, f"Dictionaries are not equal: {deep_diff}"
 
     def assertListOfDictEqual(
         self,
@@ -422,30 +425,3 @@ class AlphaTestCase(TestCase):
                 expected_response.data,
                 response.data,
             )
-
-
-def save_data_json(
-    path: Path,
-    data,
-    encoding: str = "utf-8",
-):
-    if path.exists():
-        return
-
-    with open(path, "w", encoding=encoding) as file:
-        file.write(json.dumps(data))
-
-
-def save_data_byte(
-    path: Path,
-    data: bytes,
-    encoding: str = "utf-8",
-    new_line: str = "\n",
-):
-    if path.exists():
-        return
-
-    text_data = data.decode(encoding)
-
-    with open(path, "w", encoding=encoding, newline=new_line) as file:
-        file.write(text_data)
