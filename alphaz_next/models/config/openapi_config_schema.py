@@ -15,3 +15,5 @@ class OpenApiSchema(BaseModel):
 
     description: Optional[str] = Field(default=None)
     contact: Optional[ContactSchema] = Field(default=None)
+    swagger_favicon_url: Optional[str] = Field(default=None)
+    redoc_favicon_url: Optional[str] = Field(default=None)

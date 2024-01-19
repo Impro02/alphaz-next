@@ -18,21 +18,29 @@ from alphaz_next.models.config.alpha_config import AlphaConfigSchema
 # ELASTICAPM
 from elasticapm.contrib.starlette import make_apm_client, ElasticAPM
 
+_DEFAULT_FAVICON_URL = "https://fastapi.tiangolo.com/img/favicon.png"
+
 
 def _custom_openapi(config: AlphaConfigSchema, routes: List[BaseRoute]):
     title = config.project_name.upper()
     if config.environment.lower() != "prod":
         title = f"{title} [{config.environment.upper()}]"
 
+    openapi_dict = {}
+    if (openapi_config := config.api_config.openapi) is not None:
+        openapi_dict["description"] = openapi_config.description
+
+        if openapi_config.contact is not None:
+            openapi_dict["contact"] = {
+                "name": config.api_config.openapi.contact.name,
+                "email": config.api_config.openapi.contact.email,
+            }
+
     openapi_schema = get_openapi(
         title=title,
         version=config.version,
-        description=config.api_config.openapi.description,
-        contact={
-            "name": config.api_config.openapi.contact.name,
-            "email": config.api_config.openapi.contact.email,
-        },
         routes=routes,
+        **openapi_dict,
     )
 
     return openapi_schema
@@ -46,8 +54,6 @@ def create_app(
     allow_methods: Sequence[str] = ("GET",),
     allow_headers: Sequence[str] = (),
     allow_credentials: bool = False,
-    swagger_favicon_url: str = "https://fastapi.tiangolo.com/img/favicon.png",
-    redoc_favicon_url: str = "https://fastapi.tiangolo.com/img/favicon.png",
     status_response: Dict = {"status": "OK"},
 ) -> FastAPI:
     # APP
@@ -84,6 +90,15 @@ def create_app(
         app.include_router(router)
 
     app.openapi_schema = _custom_openapi(config=config, routes=app.routes)
+
+    swagger_favicon_url = _DEFAULT_FAVICON_URL
+    redoc_favicon_url = _DEFAULT_FAVICON_URL
+    if (openapi_config := config.api_config.openapi) is not None:
+        if openapi_config.swagger_favicon_url:
+            swagger_favicon_url = openapi_config.swagger_favicon_url
+
+        if openapi_config.redoc_favicon_url:
+            redoc_favicon_url = openapi_config.redoc_favicon_url
 
     @app.get("/status", include_in_schema=False)
     async def get_api_status():
