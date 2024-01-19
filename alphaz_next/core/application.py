@@ -1,13 +1,15 @@
 # MODULES
-from typing import List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 # FASTAPI
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from fastapi.openapi.utils import get_openapi, BaseRoute
 from fastapi.middleware.cors import CORSMiddleware
 
 # DEPENDENCY_INJECTOR
 from dependency_injector import containers
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 
 # MODELS
@@ -44,6 +46,9 @@ def create_app(
     allow_methods: Sequence[str] = ("GET",),
     allow_headers: Sequence[str] = (),
     allow_credentials: bool = False,
+    swagger_favicon_url: str = "https://fastapi.tiangolo.com/img/favicon.png",
+    redoc_favicon_url: str = "https://fastapi.tiangolo.com/img/favicon.png",
+    status_response: Dict = {"status": "OK"},
 ) -> FastAPI:
     # APP
     app = FastAPI(
@@ -79,5 +84,38 @@ def create_app(
         app.include_router(router)
 
     app.openapi_schema = _custom_openapi(config=config, routes=app.routes)
+
+    @app.get("/status", include_in_schema=False)
+    async def get_api_status():
+        return status_response
+
+    @app.get("/docs", include_in_schema=False)
+    def swagger_ui_html(req: Request) -> HTMLResponse:
+        root_path = req.scope.get("root_path", "").rstrip("/")
+        openapi_url = root_path + app.openapi_url
+        oauth2_redirect_url = app.swagger_ui_oauth2_redirect_url
+        if oauth2_redirect_url:
+            oauth2_redirect_url = root_path + oauth2_redirect_url
+
+        return get_swagger_ui_html(
+            openapi_url=openapi_url,
+            title=app.title + " - Swagger UI",
+            oauth2_redirect_url=oauth2_redirect_url,
+            init_oauth=app.swagger_ui_init_oauth,
+            swagger_favicon_url=swagger_favicon_url,
+            swagger_ui_parameters=app.swagger_ui_parameters,
+        )
+
+    @app.get("/redoc", include_in_schema=False)
+    async def redoc_html():
+        return get_redoc_html(
+            openapi_url=app.openapi_url,
+            title=app.title + " - ReDoc",
+            redoc_favicon_url=redoc_favicon_url,
+        )
+
+    @app.get("/")
+    async def home():
+        return RedirectResponse("/docs")
 
     return app
