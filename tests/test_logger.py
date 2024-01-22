@@ -7,9 +7,7 @@ from unittest import TestCase
 # ALPHAZ_NEXT
 from alphaz_next.utils.logger import AlphaLogger
 
-LOG_PATTERN = (
-    r"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s-\s\w+\s-\s\d+\s-\s\w+\.\d+\s-\s\w+:\s.+"
-)
+LOG_PATTERN = r"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s-\s\w+\s-\s\d+\s-\s\w+\.\d+\s-\s\w+\s+:\s+.+"
 
 
 class TestAlphaLogger(TestCase):

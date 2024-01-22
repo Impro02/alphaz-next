@@ -6,7 +6,7 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import Callable, Optional
 
-DEFAULT_FORMAT = "%(asctime)s - %(levelname)s - %(process)d - %(module)s.%(lineno)d - %(name)s: %(message)s"
+DEFAULT_FORMAT = "%(asctime)s - %(levelname)-7s - %(process)5d - %(module)+15s.%(lineno)-4d - %(name)-14s: %(message)s"
 DEFAULT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
