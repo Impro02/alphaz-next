@@ -30,7 +30,10 @@ from alphaz_next.models.config.alpha_config import AlphaConfigSchema
 
 # CORE
 from alphaz_next.core.middleware import log_request_middleware
-from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER, ExcludeRoutersFilter
+from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER
+
+# UTILS
+from alphaz_next.utils.logging_filters import ExcludeRoutersFilter
 
 
 # ELASTICAPM
