@@ -1,19 +1,12 @@
 # MODULES
-import datetime
 from enum import Enum
-import os
-import re
 import sys
-import inspect
 import logging
-import unidecode
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, Optional
 
-DEFAULT_FORMAT = (
-    "{$date} - {$level:7} - {$pid:5} - {$file:>15}.{$line:<4} - {$name:<14}: $message"
-)
+DEFAULT_FORMAT = "%(asctime)s - %(levelname)s - %(process)d - %(module)s.%(lineno)d - %(name)s: %(message)s"
 DEFAULT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
@@ -22,6 +15,22 @@ class LevelEnum(Enum):
     WARNING = "WARNING"
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
+
+
+class WarningFilter(logging.Filter):
+    def filter(self, record):
+        return record.levelno == logging.WARNING
+
+
+class ErrorFilter(logging.Filter):
+    def filter(self, record):
+        return record.levelno in (logging.ERROR, logging.CRITICAL)
+
+
+class MonitoringFilter(logging.Filter):
+    def filter(self, record):
+        monitor = record.__dict__.get("monitor", None)
+        return monitor is not None
 
 
 class AlphaLogger:
@@ -39,21 +48,12 @@ class AlphaLogger:
         date_formatter: str = DEFAULT_DATE_FORMAT,
     ):
         self._name = name
-        self._logging_formatter = logging_formatter
-        self._date_formatter = date_formatter
-        self._date_str = None
 
         if file_name is None:
             file_name = name
 
-        error_name = "errors"
-        warning_name = "warnings"
-        monitoring_name = "monitoring"
-
         directory_path = Path(directory)
         directory_path.mkdir(parents=True, exist_ok=True)
-
-        formatter = logging.Formatter()
 
         logger_config = {
             "level": level,
@@ -61,28 +61,14 @@ class AlphaLogger:
             "when": when,
             "interval": interval,
             "backup_count": backup_count,
-            "formatter": formatter,
+            "logging_formatter": logging_formatter,
+            "date_formatter": date_formatter,
         }
 
         self._logger = self._create_logger(
             name=name,
             file_name=file_name,
             stream_output=stream_output,
-            **logger_config,
-        )
-        self._error_logger = self._create_logger(
-            name=error_name,
-            file_name=error_name,
-            **logger_config,
-        )
-        self._warning_logger = self._create_logger(
-            name=warning_name,
-            file_name=warning_name,
-            **logger_config,
-        )
-        self._monitoring_logger = self._create_logger(
-            name=monitoring_name,
-            file_name=monitoring_name,
             **logger_config,
         )
 
@@ -93,13 +79,13 @@ class AlphaLogger:
         stack_level: int = 1,
         monitor: Optional[str] = None,
     ):
-        self._log(
-            level=LevelEnum.INFO,
-            message=message,
-            stack=inspect.stack(),
+        self._logger.info(
+            message,
             exc_info=exc_info,
-            stack_level=stack_level,
-            monitor=monitor,
+            stacklevel=stack_level + 1,
+            extra={
+                "monitor": monitor,
+            },
         )
 
     def warning(
@@ -109,13 +95,13 @@ class AlphaLogger:
         stack_level: int = 1,
         monitor: Optional[str] = None,
     ):
-        self._log(
-            level=LevelEnum.WARNING,
-            message=message,
-            stack=inspect.stack(),
+        self._logger.warning(
+            message,
             exc_info=exc_info,
-            stack_level=stack_level,
-            monitor=monitor,
+            stacklevel=stack_level + 1,
+            extra={
+                "monitor": monitor,
+            },
         )
 
     def error(
@@ -125,13 +111,13 @@ class AlphaLogger:
         stack_level: int = 1,
         monitor: Optional[str] = None,
     ):
-        self._log(
-            level=LevelEnum.ERROR,
-            message=message,
-            stack=inspect.stack(),
+        self._logger.error(
+            message,
             exc_info=exc_info,
-            stack_level=stack_level,
-            monitor=monitor,
+            stacklevel=stack_level + 1,
+            extra={
+                "monitor": monitor,
+            },
         )
 
     def critical(
@@ -141,133 +127,14 @@ class AlphaLogger:
         stack_level: int = 1,
         monitor: Optional[str] = None,
     ):
-        self._log(
-            level=LevelEnum.CRITICAL,
-            message=message,
-            stack=inspect.stack(),
+        self._logger.critical(
+            message,
             exc_info=exc_info,
-            stack_level=stack_level,
-            monitor=monitor,
+            stacklevel=stack_level + 1,
+            extra={
+                "monitor": monitor,
+            },
         )
-
-    def _log(
-        self,
-        level: LevelEnum,
-        message: str,
-        stack: List[inspect.FrameInfo],
-        exc_info=None,
-        stack_level: int = 1,
-        monitor: Optional[str] = None,
-    ):
-        self._date_str = self._get_current_date()
-
-        message_formatted = self._get_formatted_message(
-            message=message,
-            level=level,
-            stack=stack,
-            stack_level=stack_level,
-        )
-
-        match level:
-            case LevelEnum.INFO:
-                self._logger.info(
-                    message_formatted,
-                    exc_info=exc_info,
-                    stacklevel=stack_level,
-                )
-            case LevelEnum.WARNING:
-                self._logger.warning(
-                    message_formatted,
-                    exc_info=exc_info,
-                    stacklevel=stack_level,
-                )
-                self._warning_logger.warning(
-                    message_formatted,
-                    exc_info=exc_info,
-                    stacklevel=stack_level,
-                )
-            case LevelEnum.ERROR:
-                self._logger.error(
-                    message_formatted,
-                    exc_info=exc_info,
-                    stacklevel=stack_level,
-                )
-                self._error_logger.error(
-                    message_formatted,
-                    exc_info=exc_info,
-                    stacklevel=stack_level,
-                )
-            case LevelEnum.CRITICAL:
-                self._logger.critical(
-                    message_formatted,
-                    exc_info=exc_info,
-                    stacklevel=stack_level,
-                )
-                self._error_logger.critical(
-                    message_formatted,
-                    exc_info=exc_info,
-                    stacklevel=stack_level,
-                )
-
-        if monitor is not None:
-            message_formatted = self._process_monitoring_message(
-                message=message_formatted,
-                monitor=monitor,
-            )
-            self._monitoring_logger.info(
-                message_formatted,
-                exc_info=exc_info,
-                stacklevel=stack_level,
-            )
-
-    def _get_formatted_message(
-        self,
-        message: str,
-        level: LevelEnum,
-        stack: List[inspect.FrameInfo],
-        stack_level: int = 1,
-    ):
-        message_formatted = self._logging_formatter
-
-        parameters = re.findall("\{\$([a-zA-Z0-9]*):?[0-9<>]*\}", message_formatted)
-
-        parameters_values = []
-
-        if stack_level >= len(stack):
-            stack_level = len(stack) - 1
-        caller = inspect.getframeinfo(stack[stack_level][0])
-
-        structure = "$%s"
-        keys = {
-            "date": self._date_str,
-            "pid": os.getpid(),
-            "level": level.value.upper(),
-            "name": self._name,
-            "path": caller.filename,
-            "file": caller.filename.split(os.sep)[-1].replace(".py", ""),
-            "line": caller.lineno,
-        }
-
-        for parameter_name in parameters:
-            if parameter_name in keys:
-                message_formatted = message_formatted.replace(
-                    structure % parameter_name, ""
-                )
-                parameters_values.append(keys[parameter_name])
-
-        message_formatted = message_formatted.format(*parameters_values).replace(
-            structure % "message", str(message)
-        )
-
-        return message_formatted
-
-    def _get_current_date(self):
-        current_date = datetime.datetime.now()
-        return current_date.strftime(self._date_formatter)
-
-    @classmethod
-    def _process_monitoring_message(cls, message: str, monitor: str) -> str:
-        return unidecode.unidecode(message.replace(message, f"[{monitor}] ({message})"))
 
     def _create_logger(
         self,
@@ -278,13 +145,24 @@ class AlphaLogger:
         when: str,
         interval: int,
         backup_count: int,
-        formatter: logging.Formatter,
+        logging_formatter: str,
+        date_formatter: str,
         stream_output: bool = False,
     ):
         logger = logging.getLogger(name=name)
 
         if logger.hasHandlers():
             return logger
+
+        formatter = logging.Formatter(
+            logging_formatter,
+            datefmt=date_formatter,
+        )
+
+        monitoring_formatter = logging.Formatter(
+            f"[%(monitor)s] ({logging_formatter})",
+            datefmt=date_formatter,
+        )
 
         logger.setLevel(level)
 
@@ -296,14 +174,75 @@ class AlphaLogger:
             logger.addHandler(stream_handler)
 
         # Add a file handler to log messages to a file
-        time_rotating_handler = TimedRotatingFileHandler(
-            filename=directory_path / f"{file_name}.log",
+        time_rotating_handler = self._create_time_rotating_handler(
+            file_path=directory_path / f"{file_name}.log",
+            level=level,
+            formatter=formatter,
+            when=when,
+            interval=interval,
+            backup_count=backup_count,
+        )
+
+        # Add a warning file handler to log warning messages to a file
+        warning_time_rotating_handler = self._create_time_rotating_handler(
+            file_path=directory_path / "warnings.log",
+            level=level,
+            formatter=formatter,
+            when=when,
+            interval=interval,
+            backup_count=backup_count,
+            filter=WarningFilter,
+        )
+
+        # Add a error file handler to log error messages to a file
+        error_time_rotating_handler = self._create_time_rotating_handler(
+            file_path=directory_path / "errors.log",
+            level=level,
+            formatter=formatter,
+            when=when,
+            interval=interval,
+            backup_count=backup_count,
+            filter=ErrorFilter,
+        )
+
+        # Add a monitoring file handler to log messages linked to a monitor to a file
+        monitoring_time_rotating_handler = self._create_time_rotating_handler(
+            file_path=directory_path / "monitoring.log",
+            level=level,
+            formatter=monitoring_formatter,
+            when=when,
+            interval=interval,
+            backup_count=backup_count,
+            filter=MonitoringFilter,
+        )
+
+        logger.addHandler(time_rotating_handler)
+        logger.addHandler(warning_time_rotating_handler)
+        logger.addHandler(error_time_rotating_handler)
+        logger.addHandler(monitoring_time_rotating_handler)
+
+        return logger
+
+    def _create_time_rotating_handler(
+        self,
+        file_path: Path,
+        level: int,
+        formatter: logging.Formatter,
+        when: str,
+        interval: int,
+        backup_count: int,
+        filter: Optional[Callable[..., logging.Filter]] = None,
+    ):
+        handler = TimedRotatingFileHandler(
+            filename=file_path,
             when=when,
             interval=interval,
             backupCount=backup_count,
         )
-        time_rotating_handler.setLevel(level)
-        time_rotating_handler.setFormatter(formatter)
-        logger.addHandler(time_rotating_handler)
+        handler.setLevel(level)
+        handler.setFormatter(formatter)
 
-        return logger
+        if filter is not None:
+            handler.addFilter(filter())
+
+        return handler
