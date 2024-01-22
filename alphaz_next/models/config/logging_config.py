@@ -1,11 +1,12 @@
 # PYDANTIC
-from typing import Annotated
+from typing import Annotated, List
 
 # PYDANTIC
+from pydantic_core.core_schema import FieldValidationInfo
 from pydantic import (
     BaseModel,
     ConfigDict,
-    FieldValidationInfo,
+    Field,
     PositiveInt,
     StringConstraints,
     computed_field,
@@ -43,6 +44,7 @@ class LoggingSchema(BaseModel):
         ),
     ]
     time_rotating: TimeRotatingSchema
+    excluded_routers: List[str] = Field(default_factory=lambda: [])
 
     @field_validator("level")
     @classmethod

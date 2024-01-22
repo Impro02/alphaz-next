@@ -30,7 +30,7 @@ from alphaz_next.models.config.alpha_config import AlphaConfigSchema
 
 # CORE
 from alphaz_next.core.middleware import log_request_middleware
-from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER
+from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER, ExcludeRoutersFilter
 
 
 # ELASTICAPM
@@ -73,6 +73,10 @@ def create_app(
     allow_credentials: bool = False,
     status_response: Dict = {"status": "OK"},
 ) -> FastAPI:
+    UVICORN_LOGGER.addFilter(
+        ExcludeRoutersFilter(router_names=config.api_config.logging.excluded_routers)
+    )
+
     # APP
     app = FastAPI(
         title=config.project_name.upper(),

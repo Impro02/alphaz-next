@@ -1,36 +1,18 @@
 # MODULES
-from enum import Enum
 import sys
 import logging
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Dict, Optional
+
+# UTILS
+from alphaz_next.utils.logging_filters import (
+    LevelFilter,
+    AttributeFilter,
+)
 
 DEFAULT_FORMAT = "%(asctime)s - %(levelname)-7s - %(process)5d - %(module)+15s.%(lineno)-4d - %(name)-14s: %(message)s"
 DEFAULT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-
-
-class LevelEnum(Enum):
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-    CRITICAL = "CRITICAL"
-
-
-class WarningFilter(logging.Filter):
-    def filter(self, record):
-        return record.levelno == logging.WARNING
-
-
-class ErrorFilter(logging.Filter):
-    def filter(self, record):
-        return record.levelno in (logging.ERROR, logging.CRITICAL)
-
-
-class MonitoringFilter(logging.Filter):
-    def filter(self, record):
-        monitor = record.__dict__.get("monitor", None)
-        return monitor is not None
 
 
 class AlphaLogger:
@@ -191,7 +173,10 @@ class AlphaLogger:
             when=when,
             interval=interval,
             backup_count=backup_count,
-            filter=WarningFilter,
+            filter=LevelFilter,
+            filter_kwargs={
+                "levels": [logging.WARNING],
+            },
         )
 
         # Add a error file handler to log error messages to a file
@@ -202,7 +187,10 @@ class AlphaLogger:
             when=when,
             interval=interval,
             backup_count=backup_count,
-            filter=ErrorFilter,
+            filter=LevelFilter,
+            filter_kwargs={
+                "levels": [logging.ERROR, logging.CRITICAL],
+            },
         )
 
         # Add a monitoring file handler to log messages linked to a monitor to a file
@@ -213,7 +201,10 @@ class AlphaLogger:
             when=when,
             interval=interval,
             backup_count=backup_count,
-            filter=MonitoringFilter,
+            filter=AttributeFilter,
+            filter_kwargs={
+                "param": "monitor",
+            },
         )
 
         logger.addHandler(time_rotating_handler)
@@ -232,6 +223,7 @@ class AlphaLogger:
         interval: int,
         backup_count: int,
         filter: Optional[Callable[..., logging.Filter]] = None,
+        filter_kwargs: Optional[Dict[str, Any]] = None,
     ):
         handler = TimedRotatingFileHandler(
             filename=file_path,
@@ -243,6 +235,6 @@ class AlphaLogger:
         handler.setFormatter(formatter)
 
         if filter is not None:
-            handler.addFilter(filter())
+            handler.addFilter(filter(**filter_kwargs or {}))
 
         return handler
