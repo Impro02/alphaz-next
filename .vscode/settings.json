@@ -21,7 +21,9 @@
     "peacock.color": "#f9e64f",
     "cSpell.words": [
         "deepdiff",
-        "httpx"
+        "httpx",
+        "levelname",
+        "levelno"
     ],
     "python.testing.unittestArgs": [
         "-v",
