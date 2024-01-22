@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 # HTTPX
 from httpx import Response
 from httpx._types import HeaderTypes, QueryParamTypes
+from alphaz_next.core.constants import HeaderEnum
 
 # LIBS
 from alphaz_next.libs.file_lib import save_file, save_json_file
@@ -130,9 +131,11 @@ class AlphaTestCase(TestCase):
             status_code=status_code,
             data=data,
             headers=response.headers,
-            header_status_description=response.headers.get("x-status-description"),
-            header_pagination=response.headers.get("x-pagination"),
-            header_warning=response.headers.get("x-warning"),
+            header_status_description=response.headers.get(
+                HeaderEnum.STATUS_DESCRIPTION.value
+            ),
+            header_pagination=response.headers.get(HeaderEnum.PAGINATION.value),
+            header_warning=response.headers.get(HeaderEnum.WARNING.value),
         )
 
     def put_client(
@@ -171,9 +174,11 @@ class AlphaTestCase(TestCase):
             status_code=status_code,
             data=data,
             headers=response.headers,
-            header_status_description=response.headers.get("x-status-description"),
-            header_pagination=response.headers.get("x-pagination"),
-            header_warning=response.headers.get("x-warning"),
+            header_status_description=response.headers.get(
+                HeaderEnum.STATUS_DESCRIPTION.value
+            ),
+            header_pagination=response.headers.get(HeaderEnum.PAGINATION.value),
+            header_warning=response.headers.get(HeaderEnum.WARNING.value),
         )
 
     def patch_client(
@@ -212,9 +217,11 @@ class AlphaTestCase(TestCase):
             status_code=status_code,
             data=data,
             headers=response.headers,
-            header_status_description=response.headers.get("x-status-description"),
-            header_pagination=response.headers.get("x-pagination"),
-            header_warning=response.headers.get("x-warning"),
+            header_status_description=response.headers.get(
+                HeaderEnum.STATUS_DESCRIPTION.value
+            ),
+            header_pagination=response.headers.get(HeaderEnum.PAGINATION.value),
+            header_warning=response.headers.get(HeaderEnum.WARNING.value),
         )
 
     def post_client(
@@ -253,9 +260,11 @@ class AlphaTestCase(TestCase):
             status_code=status_code,
             data=data,
             headers=response.headers,
-            header_status_description=response.headers.get("x-status-description"),
-            header_pagination=response.headers.get("x-pagination"),
-            header_warning=response.headers.get("x-warning"),
+            header_status_description=response.headers.get(
+                HeaderEnum.STATUS_DESCRIPTION.value
+            ),
+            header_pagination=response.headers.get(HeaderEnum.PAGINATION.value),
+            header_warning=response.headers.get(HeaderEnum.WARNING.value),
         )
 
     def delete_client(
@@ -290,9 +299,11 @@ class AlphaTestCase(TestCase):
             status_code=status_code,
             data=data,
             headers=response.headers,
-            header_status_description=response.headers.get("x-status-description"),
-            header_pagination=response.headers.get("x-pagination"),
-            header_warning=response.headers.get("x-warning"),
+            header_status_description=response.headers.get(
+                HeaderEnum.STATUS_DESCRIPTION.value
+            ),
+            header_pagination=response.headers.get(HeaderEnum.PAGINATION.value),
+            header_warning=response.headers.get(HeaderEnum.WARNING.value),
         )
 
     def _post_process_response(
@@ -385,13 +396,16 @@ class AlphaTestCase(TestCase):
         self.assertEqual(expected_response.status_code, response.status_code)
 
         self.assertEqual(
-            expected_response.pagination, response.headers.get("x-pagination")
+            expected_response.pagination,
+            response.headers.get(HeaderEnum.PAGINATION.value),
         )
 
-        header_status_description = response.headers.get("x-status-description", [])
+        header_status_description = response.headers.get(
+            HeaderEnum.STATUS_DESCRIPTION.value, []
+        )
         if isinstance(header_status_description, str):
             header_status_description = json.loads(
-                response.headers.get("x-status-description")
+                response.headers.get(HeaderEnum.STATUS_DESCRIPTION.value)
             )
 
             if not isinstance(header_status_description, list):
@@ -406,7 +420,9 @@ class AlphaTestCase(TestCase):
         if expected_response.warning is not None:
             expected_response_warning = "1" if expected_response.warning else "0"
 
-        self.assertEqual(expected_response_warning, response.headers.get("x-warning"))
+        self.assertEqual(
+            expected_response_warning, response.headers.get(HeaderEnum.WARNING.value)
+        )
 
         if isinstance(expected_response.data, list):
             self.assertListOfDictEqual(

@@ -2,6 +2,8 @@
 import json
 from typing import Dict, List, Optional, TypedDict, Union
 
+from alphaz_next.core.constants import HeaderEnum
+
 
 class ExtHeaders(TypedDict):
     pagination: Optional[str]
@@ -25,11 +27,13 @@ def extend_headers(
         access_control_expose_headers.append(name)
 
     if (pagination := ext_headers.get("pagination")) is not None:
-        add_ext_header("x-pagination", pagination)
+        add_ext_header(HeaderEnum.PAGINATION.value, pagination)
     if (status_description := ext_headers.get("status_description")) is not None:
-        add_ext_header("x-status-description", json.dumps(status_description))
+        add_ext_header(
+            HeaderEnum.STATUS_DESCRIPTION.value, json.dumps(status_description)
+        )
     if (warning := ext_headers.get("warning")) is not None:
-        add_ext_header("x-warning", "1" if warning else "0")
+        add_ext_header(HeaderEnum.WARNING.value, "1" if warning else "0")
 
     if tmp_headers is not None:
         headers = headers or {}
