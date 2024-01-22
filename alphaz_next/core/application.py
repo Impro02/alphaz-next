@@ -29,7 +29,8 @@ from elasticapm.contrib.starlette import make_apm_client, ElasticAPM
 from alphaz_next.models.config.alpha_config import AlphaConfigSchema
 
 # CORE
-from alphaz_next.core.middleware import UVICORN_LOGGER, log_request_middleware
+from alphaz_next.core.middleware import log_request_middleware
+from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER
 
 
 # ELASTICAPM

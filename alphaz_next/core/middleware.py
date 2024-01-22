@@ -1,15 +1,13 @@
+# MODULES
 import http
-import logging
 import time
 
+# FASTAPI
 from fastapi import Request, Response
 
+# CORE
 from alphaz_next.core.constants import HeaderEnum
-
-uvicorn_access = logging.getLogger("uvicorn.access")
-uvicorn_access.disabled = True
-
-UVICORN_LOGGER = logging.getLogger("uvicorn")
+from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER
 
 
 async def log_request_middleware(request: Request, call_next):
