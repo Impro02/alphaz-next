@@ -7,6 +7,8 @@ from pathlib import Path
 
 # PYDANTIC
 from pydantic import BaseModel, ConfigDict, model_validator
+
+# LIBS
 from alphaz_next.libs.file_lib import open_json_file
 
 # MODELS
