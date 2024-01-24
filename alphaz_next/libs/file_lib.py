@@ -1,7 +1,7 @@
 # MODULES
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Union
 
 
 def open_json_file(path: Path, encoding="utf-8"):
@@ -12,7 +12,7 @@ def open_json_file(path: Path, encoding="utf-8"):
         raise FileExistsError(f"Path {path} is not a file")
 
     with open(path, encoding=encoding) as json_file:
-        raw_data: dict = json.load(json_file)
+        raw_data: Union[List[Dict], Dict] = json.load(json_file)
 
     return raw_data
 

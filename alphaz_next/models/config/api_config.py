@@ -17,8 +17,6 @@ class AlphaApiConfigSchema(BaseModel):
     )
 
     databases_config_path: str
-    port: int
-    workers: int
     logging: LoggingSchema
     apm: Optional[ApmConfig] = Field(default=None)
     openapi: Optional[OpenApiSchema] = Field(default=None)

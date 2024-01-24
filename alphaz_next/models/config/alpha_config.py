@@ -1,17 +1,22 @@
 # MODULES
 import getpass
 import os
+import re
 from typing import Any, Dict, TypedDict
 from pathlib import Path
 
 # PYDANTIC
 from pydantic import BaseModel, ConfigDict, model_validator
+from alphaz_next.libs.file_lib import open_json_file
 
 # MODELS
 from alphaz_next.models.config.api_config import AlphaApiConfigSchema
 
+_CONFIG_PATTERN = r"\$config\(([^)]*)\)"
+
 
 class ReservedConfigItem(TypedDict):
+    environment: str
     root: str
     project_name: str
 
@@ -33,12 +38,14 @@ class AlphaConfigSchema(BaseModel):
         tmp = replace_reserved_config(
             data,
             reserved_config=ReservedConfigItem(
+                environment=data.get("environment"),
                 root=data.get("root"),
                 project_name=data.get("project_name"),
             ),
         )
 
         reserved_fields = ReservedConfigItem(
+            environment=data.get("environment"),
             root=tmp.get("root"),
             project_name=tmp.get("project_name"),
         )
@@ -56,6 +63,21 @@ def replace_reserved_config(
 ) -> Dict:
     replaced_config = config.copy()
 
+    def open_child_config(value: str):
+        if not isinstance(value, str):
+            return value
+
+        match = re.search(_CONFIG_PATTERN, value)
+
+        if not match:
+            return value
+
+        result = match.group(1)
+
+        result = open_json_file(Path(result))
+
+        return traverse(result)
+
     def replace_variable(value: Any):
         return (
             (
@@ -64,6 +86,7 @@ def replace_reserved_config(
                 .replace("{{project_name}}", reserved_config.get("project_name"))
                 .replace("{{user}}", getpass.getuser())
                 .replace("{{project}}", os.path.abspath(os.getcwd()))
+                .replace("{{environment}}", reserved_config.get("environment"))
             )
             if isinstance(value, str)
             else value
@@ -75,13 +98,15 @@ def replace_reserved_config(
                 if isinstance(value, (dict, list)):
                     traverse(value)
                 else:
-                    obj[key] = replace_variable(value)
+                    replaced_variable = replace_variable(value)
+                    obj[key] = open_child_config(replaced_variable)
         elif isinstance(obj, list):
             for i, value in enumerate(obj):
                 if isinstance(value, (dict, list)):
                     traverse(value)
                 else:
-                    obj[i] = replace_variable(value)
+                    replaced_variable = replace_variable(value)
+                    obj[i] = open_child_config(replaced_variable)
 
         return obj
 
