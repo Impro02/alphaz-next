@@ -49,6 +49,7 @@ def _custom_openapi(config: AlphaConfigSchema, routes: List[BaseRoute]):
     openapi_dict = {}
     if (openapi_config := config.api_config.openapi) is not None:
         openapi_dict["description"] = openapi_config.description
+        openapi_dict["tags"] = openapi_config.tags
 
         if openapi_config.contact is not None:
             openapi_dict["contact"] = {

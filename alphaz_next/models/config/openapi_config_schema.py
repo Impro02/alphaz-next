@@ -1,5 +1,5 @@
 # MODULES
-from typing import Optional
+from typing import Dict, List, Optional
 
 # PYDANTIC
 from pydantic import BaseModel, ConfigDict, Field
@@ -17,3 +17,4 @@ class OpenApiSchema(BaseModel):
     contact: Optional[ContactSchema] = Field(default=None)
     swagger_favicon_url: Optional[str] = Field(default=None)
     redoc_favicon_url: Optional[str] = Field(default=None)
+    tags: List[Dict[str, str]] = Field(default_factory=lambda: [])
