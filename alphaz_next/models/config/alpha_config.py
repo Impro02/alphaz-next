@@ -31,6 +31,8 @@ class AlphaConfigSchema(BaseModel):
     project_name: str
     version: str
     root: str
+    port: int
+    workers: int
 
     api_config: AlphaApiConfigSchema
 

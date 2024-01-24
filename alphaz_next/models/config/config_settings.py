@@ -37,6 +37,8 @@ def create_config_settings(
                 "environment": self.environment,
                 "root": self.root,
                 "config_file_path": self.config_file_path,
+                "port": self.port,
+                "workers": self.workers,
             }
 
             data.update(data_ext)
