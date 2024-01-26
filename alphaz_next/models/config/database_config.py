@@ -47,7 +47,7 @@ class AlphaDatabaseOracleConfigSchema(AlphaDatabaseConfigSchema):
         )
 
 
-class AlphaDatabaseOracleAsyncConfigSchema(AlphaDatabaseConfigSchema):
+class AlphaDatabaseOracleDbConfigSchema(AlphaDatabaseConfigSchema):
     host: str
     username: str
     password: str
@@ -59,7 +59,24 @@ class AlphaDatabaseOracleAsyncConfigSchema(AlphaDatabaseConfigSchema):
     @property
     def connection_string(self) -> str:
         return (
-            f"oracle+cx_oracle_async://{self.username}:{self.password}@"
+            f"oracle+oracledb://{self.username}:{self.password}@"
+            f"{self.host}:{self.port}/{self.service_name}"
+        )
+
+
+class AlphaDatabaseOracleDbAsyncConfigSchema(AlphaDatabaseConfigSchema):
+    host: str
+    username: str
+    password: str
+    port: int
+    service_name: str
+    type: str
+
+    @computed_field
+    @property
+    def connection_string(self) -> str:
+        return (
+            f"oracle+oracledb_async://{self.username}:{self.password}@"
             f"{self.host}:{self.port}/{self.service_name}"
         )
 
@@ -106,8 +123,10 @@ def create_databases_config(
         match db_type:
             case "oracle":
                 configs[k] = AlphaDatabaseOracleConfigSchema.model_validate(v)
-            case "oracle_async":
-                configs[k] = AlphaDatabaseOracleAsyncConfigSchema.model_validate(v)
+            case "oracledb":
+                configs[k] = AlphaDatabaseOracleDbConfigSchema.model_validate(v)
+            case "oracledb_async":
+                configs[k] = AlphaDatabaseOracleDbAsyncConfigSchema.model_validate(v)
             case "sqlite":
                 configs[k] = AlphaDatabaseSqliteConfigSchema.model_validate(v)
             case "aiosqlite":
