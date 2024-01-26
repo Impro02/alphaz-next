@@ -109,9 +109,6 @@ class _Database:
                 f"Unable to init database tables because {init=} in config"
             )
 
-        if directory is None:
-            directory = self.init_database_dir_json
-
         table_names = table_names or set()
         tables = {
             k: v for k, v in self._base.metadata.tables.items() if k in table_names
@@ -120,7 +117,7 @@ class _Database:
         return sort_tables(tables.values())
 
 
-class AlphaDataBase(_Database):
+class AlphaDatabase(_Database):
     def __init__(
         self,
         databases_config: _DataBaseConfigTypedDict,
@@ -188,6 +185,7 @@ class AlphaDataBase(_Database):
                 if raw_data is None:
                     continue
 
+                session.execute(table.delete())
                 session.execute(table.insert().values(raw_data))
 
                 self._logger.info(
