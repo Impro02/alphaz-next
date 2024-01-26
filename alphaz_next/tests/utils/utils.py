@@ -1,9 +1,10 @@
 # MODULES
 from enum import Enum
 import json
+import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 # DEEPDIFF
 from deepdiff import DeepDiff
@@ -23,7 +24,12 @@ from httpx._types import HeaderTypes, QueryParamTypes
 from alphaz_next.core.constants import HeaderEnum
 
 # LIBS
-from alphaz_next.libs.file_lib import save_file, save_json_file
+from alphaz_next.libs.file_lib import (
+    save_file,
+    save_json_file,
+    open_json_file,
+    open_file,
+)
 
 
 class ExpectedResponse(BaseModel):
@@ -47,7 +53,7 @@ class ResponseFormatEnum(Enum):
 
 
 class _AlphaTest(TestCase):
-    __RESET_BEFORE_NEXT_TEST__: bool = True
+    __RESET_BEFORE_NEXT_TEST__: bool = False
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -55,8 +61,15 @@ class _AlphaTest(TestCase):
 
         cls.client = TestClient(cls.app)
 
-    def mark_reset_before_next_test(self):
-        AlphaTestCase.__RESET_BEFORE_NEXT_TEST__ = True
+        cls.check_reset_before_next_test()
+
+    @classmethod
+    def check_reset_before_next_test(cls):
+        cls.__RESET_BEFORE_NEXT_TEST__ = True
+
+    @classmethod
+    def uncheck_reset_before_next_test(cls):
+        cls.__RESET_BEFORE_NEXT_TEST__ = False
 
     @classmethod
     def create_app(cls):
@@ -433,12 +446,12 @@ class _AlphaTest(TestCase):
 
 class AlphaTestCase(_AlphaTest):
     def setUp(self):
-        if not AlphaTestCase.__RESET_BEFORE_NEXT_TEST__:
+        if not self.__RESET_BEFORE_NEXT_TEST__:
             return
 
         self.reset_tables()
 
-        AlphaTestCase.__RESET_BEFORE_NEXT_TEST__ = False
+        self.__RESET_BEFORE_NEXT_TEST__ = False
 
     @classmethod
     def reset_tables(cls):
@@ -447,13 +460,61 @@ class AlphaTestCase(_AlphaTest):
 
 class AlphaIsolatedAsyncioTestCase(IsolatedAsyncioTestCase, _AlphaTest):
     async def asyncSetUp(self):
-        if not AlphaIsolatedAsyncioTestCase.__RESET_BEFORE_NEXT_TEST__:
+        if not self.__RESET_BEFORE_NEXT_TEST__:
             return
 
         await self.reset_tables()
 
-        AlphaIsolatedAsyncioTestCase.__RESET_BEFORE_NEXT_TEST__ = False
+        self.__RESET_BEFORE_NEXT_TEST__ = False
 
     @classmethod
     async def reset_tables(cls):
         raise NotImplementedError()
+
+
+def load_expected_data(
+    saved_dir_path: Path = None,
+    saved_file_path: str = None,
+    format: Literal["json", "txt"] = "json",
+    encoding: str = "utf-8",
+    reset_before_next_test: bool = False,
+):
+    def decorator(func):
+        def wrapper(self, *args, **kwargs):
+            class_name = self.__class__.__name__
+            function_name = func.__name__
+
+            if not isinstance(self, _AlphaTest):
+                raise TypeError(
+                    f"{self.__class__.__name__} must be instance of {_AlphaTest.__name__}"
+                )
+
+            self.check_reset_before_next_test() if reset_before_next_test else self.uncheck_reset_before_next_test()
+
+            if saved_dir_path is None:
+                return func(self, *args, **kwargs)
+
+            file_path = (
+                saved_dir_path / f"{class_name}__{function_name}.{format}"
+                if saved_file_path is None
+                else saved_dir_path / saved_file_path
+            )
+
+            try:
+                match format:
+                    case "json":
+                        expected_data = open_json_file(file_path, encoding=encoding)
+                    case "txt":
+                        expected_data = open_file(file_path, encoding=encoding)
+                    case _:
+                        expected_data = {}
+            except FileNotFoundError | FileExistsError:
+                expected_data = {}
+
+            data = func(self, expected_data, file_path, *args, **kwargs)
+
+            return data
+
+        return wrapper
+
+    return decorator
