@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 from deepdiff import DeepDiff
 
 # UNITTEST
-from unittest import TestCase
+from unittest import TestCase, IsolatedAsyncioTestCase
 
 # FASTAPI
 from fastapi.testclient import TestClient
@@ -63,12 +63,12 @@ class AlphaTestCase(TestCase):
 
         cls.client = TestClient(cls.app)
 
-    def mark_reset_before_next_test(self):
-        AlphaTestCase.__RESET_BEFORE_NEXT_TEST__ = True
-
     @classmethod
     def reset_tables(cls):
         raise NotImplementedError()
+
+    def mark_reset_before_next_test(self):
+        AlphaTestCase.__RESET_BEFORE_NEXT_TEST__ = True
 
     @classmethod
     def create_app(cls):
@@ -441,3 +441,13 @@ class AlphaTestCase(TestCase):
                 expected_response.data,
                 response.data,
             )
+
+
+class AlphaIsolatedAsyncioTestCase(IsolatedAsyncioTestCase, AlphaTestCase):
+    async def asyncSetUp(self):
+        if not AlphaIsolatedAsyncioTestCase.__RESET_BEFORE_NEXT_TEST__:
+            return
+
+        await self.reset_tables()
+
+        AlphaIsolatedAsyncioTestCase.__RESET_BEFORE_NEXT_TEST__ = False
