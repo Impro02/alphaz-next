@@ -57,6 +57,16 @@ class AlphaDatabaseSqliteConfigSchema(AlphaDatabaseConfigSchema):
         return f"sqlite:///{self.path}"
 
 
+class AlphaDatabaseAioSqliteConfigSchema(AlphaDatabaseConfigSchema):
+    path: str
+
+    @computed_field
+    @property
+    def connection_string(self) -> str:
+        Path(self.path).parent.mkdir(parents=True, exist_ok=True)
+        return f"sqlite+aiosqlite:///{self.path}"
+
+
 _T = TypeVar("_T", bound=BaseModel)
 
 
