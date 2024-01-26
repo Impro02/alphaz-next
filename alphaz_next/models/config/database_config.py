@@ -91,6 +91,8 @@ def create_databases_config(
                 configs[k] = AlphaDatabaseOracleConfigSchema.model_validate(v)
             case "sqlite":
                 configs[k] = AlphaDatabaseSqliteConfigSchema.model_validate(v)
+            case "aiosqlite":
+                configs[k] = AlphaDatabaseAioSqliteConfigSchema.model_validate(v)
             case _:
                 warnings.warn(f"database type {db_type} is not supported")
 
