@@ -46,26 +46,14 @@ class ResponseFormatEnum(Enum):
     NO_CONTENT = "no_content"
 
 
-class AlphaTestCase(TestCase):
-    __RESET_BEFORE_NEXT_TEST__: bool = False
-
-    def setUp(self):
-        if not AlphaTestCase.__RESET_BEFORE_NEXT_TEST__:
-            return
-
-        self.reset_tables()
-
-        AlphaTestCase.__RESET_BEFORE_NEXT_TEST__ = False
+class _AlphaTest(TestCase):
+    __RESET_BEFORE_NEXT_TEST__: bool = True
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.app = cls.create_app()
 
         cls.client = TestClient(cls.app)
-
-    @classmethod
-    def reset_tables(cls):
-        raise NotImplementedError()
 
     def mark_reset_before_next_test(self):
         AlphaTestCase.__RESET_BEFORE_NEXT_TEST__ = True
@@ -443,7 +431,21 @@ class AlphaTestCase(TestCase):
             )
 
 
-class AlphaIsolatedAsyncioTestCase(IsolatedAsyncioTestCase, AlphaTestCase):
+class AlphaTestCase(_AlphaTest):
+    def setUp(self):
+        if not AlphaTestCase.__RESET_BEFORE_NEXT_TEST__:
+            return
+
+        self.reset_tables()
+
+        AlphaTestCase.__RESET_BEFORE_NEXT_TEST__ = False
+
+    @classmethod
+    def reset_tables(cls):
+        raise NotImplementedError()
+
+
+class AlphaIsolatedAsyncioTestCase(IsolatedAsyncioTestCase, _AlphaTest):
     async def asyncSetUp(self):
         if not AlphaIsolatedAsyncioTestCase.__RESET_BEFORE_NEXT_TEST__:
             return
@@ -451,3 +453,7 @@ class AlphaIsolatedAsyncioTestCase(IsolatedAsyncioTestCase, AlphaTestCase):
         await self.reset_tables()
 
         AlphaIsolatedAsyncioTestCase.__RESET_BEFORE_NEXT_TEST__ = False
+
+    @classmethod
+    async def reset_tables(cls):
+        raise NotImplementedError()
