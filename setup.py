@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = "0.3.0"
+version = "0.3.1"
 
 with open("requirements.txt") as f:
     required_packages = f.read().splitlines()
@@ -10,6 +10,7 @@ setup(
     version=version,
     packages=[
         "alphaz_next",
+        "alphaz_next.asyncio",
         "alphaz_next.auth",
         "alphaz_next.core",
         "alphaz_next.core.responses",
