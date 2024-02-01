@@ -132,6 +132,7 @@ class AlphaLogger:
         stream_output: bool = False,
     ):
         logger = logging.getLogger(name=name)
+        logger.propagate = False
 
         if logger.hasHandlers():
             return logger
