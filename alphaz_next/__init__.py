@@ -5,6 +5,6 @@ from pysql_repo import (
     with_session,
     LoadingTechnique,
     Operators,
+    RelationshipOption,
 )
-from pysql_repo.utils import RelationshipOption
 from alphaz_next.utils.logger import AlphaLogger
