@@ -1,14 +1,19 @@
 # MODULES
-import sys
-import logging
-from logging.handlers import TimedRotatingFileHandler
-from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+import sys as _sys
+import logging as _logging
+from logging.handlers import TimedRotatingFileHandler as _TimedRotatingFileHandler
+from pathlib import Path as _Path
+from typing import (
+    Any as _Any,
+    Callable as _Callable,
+    Dict as _Dict,
+    Optional as _Optional,
+)
 
 # UTILS
 from alphaz_next.utils.logging_filters import (
-    LevelFilter,
-    AttributeFilter,
+    LevelFilter as _LevelFilter,
+    AttributeFilter as _AttributeFilter,
 )
 
 DEFAULT_FORMAT = "%(asctime)s - %(levelname)-7s - %(process)5d - %(module)+15s.%(lineno)-4d - %(name)-14s: %(message)s"
@@ -16,25 +21,44 @@ DEFAULT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 class AlphaLogger:
+    """
+    A custom logger class that provides logging functionality with various log levels and output options.
+    """
+
     def __init__(
         self,
         name: str,
         directory: str,
-        level: int = logging.INFO,
+        level: int = _logging.INFO,
         stream_output: bool = True,
         when: str = "midnight",
         interval: int = 1,
         backup_count: int = 10,
-        file_name: Optional[str] = None,
+        file_name: _Optional[str] = None,
         logging_formatter: str = DEFAULT_FORMAT,
         date_formatter: str = DEFAULT_DATE_FORMAT,
     ):
+        """
+        Initializes a Logger object.
+
+        Args:
+            name (str): The name of the logger.
+            directory (str): The directory where log files will be stored.
+            level (int, optional): The logging level. Defaults to logging.INFO.
+            stream_output (bool, optional): Whether to output logs to the console. Defaults to True.
+            when (str, optional): The type of time-based interval for log file rotation. Defaults to "midnight".
+            interval (int, optional): The interval in days for log file rotation. Defaults to 1.
+            backup_count (int, optional): The number of backup log files to keep. Defaults to 10.
+            file_name (str, optional): The name of the log file. If not provided, it will be the same as the logger name.
+            logging_formatter (str, optional): The logging formatter string. Defaults to DEFAULT_FORMAT.
+            date_formatter (str, optional): The date formatter string. Defaults to DEFAULT_DATE_FORMAT.
+        """
         self._name = name
 
         if file_name is None:
             file_name = name
 
-        directory_path = Path(directory)
+        directory_path = _Path(directory)
         directory_path.mkdir(parents=True, exist_ok=True)
 
         logger_config = {
@@ -59,8 +83,20 @@ class AlphaLogger:
         message: str,
         exc_info: Exception = None,
         stack_level: int = 1,
-        monitor: Optional[str] = None,
-    ):
+        monitor: _Optional[str] = None,
+    ) -> None:
+        """
+        Logs an informational message.
+
+        Args:
+            message (str): The message to be logged.
+            exc_info (Exception, optional): Exception information to be included in the log. Defaults to None.
+            stack_level (int, optional): The stack level to be used for the log. Defaults to 1.
+            monitor (str, optional): The monitor to associate with the log. Defaults to None.
+
+        Returns:
+            None
+        """
         self._logger.info(
             message,
             exc_info=exc_info,
@@ -75,8 +111,20 @@ class AlphaLogger:
         message: str,
         exc_info: Exception = None,
         stack_level: int = 1,
-        monitor: Optional[str] = None,
-    ):
+        monitor: _Optional[str] = None,
+    ) -> None:
+        """
+        Log a warning message.
+
+        Args:
+            message (str): The warning message to be logged.
+            exc_info (Exception, optional): The exception information. Defaults to None.
+            stack_level (int, optional): The stack level to be used for logging. Defaults to 1.
+            monitor (str, optional): The monitor to be associated with the warning. Defaults to None.
+
+        Returns:
+            None
+        """
         self._logger.warning(
             message,
             exc_info=exc_info,
@@ -91,8 +139,17 @@ class AlphaLogger:
         message: str,
         exc_info: Exception = None,
         stack_level: int = 1,
-        monitor: Optional[str] = None,
-    ):
+        monitor: _Optional[str] = None,
+    ) -> None:
+        """
+        Log an error message.
+
+        Args:
+            message (str): The error message to be logged.
+            exc_info (Exception, optional): The exception information. Defaults to None.
+            stack_level (int, optional): The stack level to be used for logging. Defaults to 1.
+            monitor (str, optional): The monitor to be associated with the error. Defaults to None.
+        """
         self._logger.error(
             message,
             exc_info=exc_info,
@@ -107,8 +164,20 @@ class AlphaLogger:
         message: str,
         exc_info: Exception = None,
         stack_level: int = 1,
-        monitor: Optional[str] = None,
-    ):
+        monitor: _Optional[str] = None,
+    ) -> None:
+        """
+        Log a critical message.
+
+        Args:
+            message (str): The message to be logged.
+            exc_info (Exception, optional): Exception information. Defaults to None.
+            stack_level (int, optional): Stack level. Defaults to 1.
+            monitor (str, optional): Monitor information. Defaults to None.
+
+        Returns:
+            None
+        """
         self._logger.critical(
             message,
             exc_info=exc_info,
@@ -122,7 +191,7 @@ class AlphaLogger:
         self,
         name: str,
         level: int,
-        directory_path: Path,
+        directory_path: _Path,
         file_name: str,
         when: str,
         interval: int,
@@ -130,19 +199,38 @@ class AlphaLogger:
         logging_formatter: str,
         date_formatter: str,
         stream_output: bool = False,
-    ):
-        logger = logging.getLogger(name=name)
+    ) -> _logging.Logger:
+        """
+        Create and configure a logger with the specified parameters.
+
+        Args:
+            name (str): The name of the logger.
+            level (int): The logging level for the logger.
+            directory_path (Path): The directory path where log files will be stored.
+            file_name (str): The name of the log file.
+            when (str): The interval at which log files should be rotated (e.g., 'midnight', 'D', 'H', 'M', 'S').
+            interval (int): The number of intervals between log file rotations.
+            backup_count (int): The number of backup log files to keep.
+            logging_formatter (str): The logging formatter string.
+            date_formatter (str): The date formatter string.
+            stream_output (bool, optional): Whether to log messages to stdout as well. Defaults to False.
+
+        Returns:
+            logging.Logger: The configured logger.
+
+        """
+        logger = _logging.getLogger(name=name)
         logger.propagate = False
 
         if logger.hasHandlers():
             return logger
 
-        formatter = logging.Formatter(
+        formatter = _logging.Formatter(
             logging_formatter,
             datefmt=date_formatter,
         )
 
-        monitoring_formatter = logging.Formatter(
+        monitoring_formatter = _logging.Formatter(
             f"[%(monitor)s] ({logging_formatter})",
             datefmt=date_formatter,
         )
@@ -151,7 +239,7 @@ class AlphaLogger:
 
         if stream_output:
             # Add a stream handler to log messages to stdout
-            stream_handler = logging.StreamHandler(stream=sys.stdout)
+            stream_handler = _logging.StreamHandler(stream=_sys.stdout)
             stream_handler.setLevel(level)
             stream_handler.setFormatter(formatter)
             logger.addHandler(stream_handler)
@@ -174,13 +262,13 @@ class AlphaLogger:
             when=when,
             interval=interval,
             backup_count=backup_count,
-            filter=LevelFilter,
+            filter=_LevelFilter,
             filter_kwargs={
-                "levels": [logging.WARNING],
+                "levels": [_logging.WARNING],
             },
         )
 
-        # Add a error file handler to log error messages to a file
+        # Add an error file handler to log error messages to a file
         error_time_rotating_handler = self._create_time_rotating_handler(
             file_path=directory_path / "errors.log",
             level=level,
@@ -188,9 +276,9 @@ class AlphaLogger:
             when=when,
             interval=interval,
             backup_count=backup_count,
-            filter=LevelFilter,
+            filter=_LevelFilter,
             filter_kwargs={
-                "levels": [logging.ERROR, logging.CRITICAL],
+                "levels": [_logging.ERROR, _logging.CRITICAL],
             },
         )
 
@@ -202,7 +290,7 @@ class AlphaLogger:
             when=when,
             interval=interval,
             backup_count=backup_count,
-            filter=AttributeFilter,
+            filter=_AttributeFilter,
             filter_kwargs={
                 "param": "monitor",
             },
@@ -217,16 +305,32 @@ class AlphaLogger:
 
     def _create_time_rotating_handler(
         self,
-        file_path: Path,
+        file_path: _Path,
         level: int,
-        formatter: logging.Formatter,
+        formatter: _logging.Formatter,
         when: str,
         interval: int,
         backup_count: int,
-        filter: Optional[Callable[..., logging.Filter]] = None,
-        filter_kwargs: Optional[Dict[str, Any]] = None,
-    ):
-        handler = TimedRotatingFileHandler(
+        filter: _Optional[_Callable[..., _logging.Filter]] = None,
+        filter_kwargs: _Optional[_Dict[str, _Any]] = None,
+    ) -> _TimedRotatingFileHandler:
+        """
+        Create a time rotating file handler for logging.
+
+        Args:
+            file_path (Path): The path to the log file.
+            level (int): The logging level.
+            formatter (logging.Formatter): The log message formatter.
+            when (str): The type of interval at which the log file should rotate (e.g., 'midnight', 'H', 'D', 'W0' etc.).
+            interval (int): The interval at which the log file should rotate.
+            backup_count (int): The number of backup log files to keep.
+            filter (Optional[Callable[..., logging.Filter]]): An optional filter function to apply to log records.
+            filter_kwargs (Optional[Dict[str, Any]]): Optional keyword arguments to pass to the filter function.
+
+        Returns:
+            TimedRotatingFileHandler: The created time rotating file handler.
+        """
+        handler = _TimedRotatingFileHandler(
             filename=file_path,
             when=when,
             interval=interval,

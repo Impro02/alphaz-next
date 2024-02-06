@@ -1,21 +1,30 @@
 # MODULES
-from typing import Optional
+from typing import Optional as _Optional
 
 # PYDANTIC
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    BaseModel as _BaseModel,
+    ConfigDict as _ConfigDict,
+    Field as _Field,
+    model_validator as _model_validator,
+)
 
 
-class ApmConfig(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class ApmConfig(_BaseModel):
+    """
+    Configuration class for APM (Application Performance Monitoring).
+    """
 
-    server_url: Optional[str] = Field(default=None)
-    environment: Optional[str] = Field(default=None)
-    ssl_ca_cert: Optional[str] = Field(default=None)
-    ssl_verify: bool = Field(default=True)
-    debug: bool = Field(default=True)
-    active: bool = Field(default=False)
+    model_config = _ConfigDict(from_attributes=True)
 
-    @model_validator(mode="after")
+    server_url: _Optional[str] = _Field(default=None)
+    environment: _Optional[str] = _Field(default=None)
+    ssl_ca_cert: _Optional[str] = _Field(default=None)
+    ssl_verify: bool = _Field(default=True)
+    debug: bool = _Field(default=True)
+    active: bool = _Field(default=False)
+
+    @_model_validator(mode="after")
     def validate_model(self):
         if not self.active:
             return self

@@ -1,39 +1,64 @@
 # MODULES
-import sys
-from typing import Dict, List, Optional, Sequence, Union
+import sys as _sys
+from typing import (
+    Any as _Any,
+    Dict as _Dict,
+    List as _List,
+    Optional as _Optional,
+    Sequence as _Sequence,
+    Union as _Union,
+)
 
 # FASTAPI
-from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
-from fastapi.exceptions import RequestValidationError
+from fastapi import (
+    APIRouter as _APIRouter,
+    FastAPI as _FastAPI,
+    HTTPException as _HTTPException,
+    Request as _Request,
+    Response as _Response,
+)
+from fastapi.exceptions import RequestValidationError as _RequestValidationError
 from fastapi.exception_handlers import http_exception_handler as _http_exception_handler
 from fastapi.exception_handlers import (
     request_validation_exception_handler as _request_validation_exception_handler,
 )
-from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
-from fastapi.openapi.utils import get_openapi, BaseRoute
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import (
+    get_swagger_ui_html as _get_swagger_ui_html,
+    get_redoc_html as _get_redoc_html,
+)
+from fastapi.openapi.utils import get_openapi as _get_openapi, BaseRoute as _BaseRoute
+from fastapi.middleware.cors import CORSMiddleware as _CORSMiddleware
 from fastapi.responses import (
-    HTMLResponse,
-    JSONResponse,
-    PlainTextResponse,
-    RedirectResponse,
+    HTMLResponse as _HTMLResponse,
+    JSONResponse as _JSONResponse,
+    PlainTextResponse as _PlainTextResponse,
+    RedirectResponse as _RedirectResponse,
 )
 
 # DEPENDENCY_INJECTOR
-from dependency_injector import containers
+from dependency_injector import containers as _containers
 
 # ELASTICAPM
-from elasticapm.contrib.starlette import make_apm_client, ElasticAPM
+from elasticapm.contrib.starlette import (
+    make_apm_client as _make_apm_client,
+    ElasticAPM as _ElasticAPM,
+)
 
 # MODELS
-from alphaz_next.models.config.alpha_config import AlphaConfigSchema
+from alphaz_next.models.config.alpha_config import (
+    AlphaConfigSchema as _AlphaConfigSchema,
+)
 
 # CORE
-from alphaz_next.core.middleware import log_request_middleware
-from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER
+from alphaz_next.core.middleware import (
+    log_request_middleware as _log_request_middleware,
+)
+from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER as _UVICORN_LOGGER
 
 # UTILS
-from alphaz_next.utils.logging_filters import ExcludeRoutersFilter
+from alphaz_next.utils.logging_filters import (
+    ExcludeRoutersFilter as _ExcludeRoutersFilter,
+)
 
 
 # ELASTICAPM
@@ -41,7 +66,19 @@ from alphaz_next.utils.logging_filters import ExcludeRoutersFilter
 _DEFAULT_FAVICON_URL = "https://fastapi.tiangolo.com/img/favicon.png"
 
 
-def _custom_openapi(config: AlphaConfigSchema, routes: List[BaseRoute]):
+def _custom_openapi(
+    config: _AlphaConfigSchema, routes: _List[_BaseRoute]
+) -> _Dict[str, _Any]:
+    """
+    Generate a custom OpenAPI schema based on the provided configuration and routes.
+
+    Args:
+        config (AlphaConfigSchema): The configuration object containing project settings.
+        routes (List[BaseRoute]): The list of routes to include in the OpenAPI schema.
+
+    Returns:
+        Dict[str, Any]: The generated OpenAPI schema.
+    """
     title = config.project_name.upper()
     if config.environment.lower() != "prod":
         title = f"{title} [{config.environment.upper()}]"
@@ -57,7 +94,7 @@ def _custom_openapi(config: AlphaConfigSchema, routes: List[BaseRoute]):
                 "email": config.api_config.openapi.contact.email,
             }
 
-    openapi_schema = get_openapi(
+    openapi_schema = _get_openapi(
         title=title,
         version=config.version,
         routes=routes,
@@ -68,21 +105,37 @@ def _custom_openapi(config: AlphaConfigSchema, routes: List[BaseRoute]):
 
 
 def create_app(
-    config: AlphaConfigSchema,
-    routers: List[APIRouter],
-    container: Optional[containers.DeclarativeContainer] = None,
-    allow_origins: Sequence[str] = (),
-    allow_methods: Sequence[str] = ("GET",),
-    allow_headers: Sequence[str] = (),
+    config: _AlphaConfigSchema,
+    routers: _List[_APIRouter],
+    container: _Optional[_containers.DeclarativeContainer] = None,
+    allow_origins: _Sequence[str] = (),
+    allow_methods: _Sequence[str] = ("GET",),
+    allow_headers: _Sequence[str] = (),
     allow_credentials: bool = False,
-    status_response: Dict = {"status": "OK"},
-) -> FastAPI:
-    UVICORN_LOGGER.addFilter(
-        ExcludeRoutersFilter(router_names=config.api_config.logging.excluded_routers)
+    status_response: _Dict = {"status": "OK"},
+) -> _FastAPI:
+    """
+    Create a FastAPI application with the specified configuration.
+
+    Args:
+        config (AlphaConfigSchema): The configuration for the application.
+        routers (List[APIRouter]): The list of API routers to include in the application.
+        container (Optional[containers.DeclarativeContainer], optional): The dependency injection container. Defaults to None.
+        allow_origins (Sequence[str], optional): The list of allowed origins for CORS. Defaults to ().
+        allow_methods (Sequence[str], optional): The list of allowed HTTP methods for CORS. Defaults to ("GET",).
+        allow_headers (Sequence[str], optional): The list of allowed headers for CORS. Defaults to ().
+        allow_credentials (bool, optional): Whether to allow credentials for CORS. Defaults to False.
+        status_response (Dict, optional): The response to return for the "/status" endpoint. Defaults to {"status": "OK"}.
+
+    Returns:
+        FastAPI: The created FastAPI application.
+    """
+    _UVICORN_LOGGER.addFilter(
+        _ExcludeRoutersFilter(router_names=config.api_config.logging.excluded_routers)
     )
 
     # APP
-    app = FastAPI(
+    app = _FastAPI(
         title=config.project_name.upper(),
         version=config.version,
         docs_url=None,
@@ -91,17 +144,17 @@ def create_app(
     app.container = container
 
     app.add_middleware(
-        CORSMiddleware,
+        _CORSMiddleware,
         allow_origins=allow_origins,
         allow_credentials=allow_credentials,
         allow_methods=allow_methods,
         allow_headers=allow_headers,
     )
 
-    app.middleware("http")(log_request_middleware)
+    app.middleware("http")(_log_request_middleware)
 
     if config.api_config.apm is not None and config.api_config.apm.active:
-        apm = make_apm_client(
+        apm = _make_apm_client(
             {
                 "SERVICE_NAME": config.project_name,
                 "ENVIRONMENT": config.api_config.apm.environment,
@@ -111,7 +164,7 @@ def create_app(
             }
         )
 
-        app.add_middleware(ElasticAPM, client=apm)
+        app.add_middleware(_ElasticAPM, client=apm)
 
     for router in routers:
         app.include_router(router)
@@ -127,10 +180,10 @@ def create_app(
         if openapi_config.redoc_favicon_url:
             redoc_favicon_url = openapi_config.redoc_favicon_url
 
-    @app.exception_handler(RequestValidationError)
+    @app.exception_handler(_RequestValidationError)
     async def request_validation_exception_handler(
-        request: Request, exc: RequestValidationError
-    ) -> JSONResponse:
+        request: _Request, exc: _RequestValidationError
+    ) -> _JSONResponse:
         """
         This is a wrapper to the default RequestValidationException handler of FastAPI.
         This function will be called when client input is not valid.
@@ -142,13 +195,13 @@ def create_app(
             "body": body.decode(),
             "query_params": query_params,
         }
-        UVICORN_LOGGER.info(detail)
+        _UVICORN_LOGGER.info(detail)
         return await _request_validation_exception_handler(request, exc)
 
-    @app.exception_handler(HTTPException)
+    @app.exception_handler(_HTTPException)
     async def http_exception_handler(
-        request: Request, exc: HTTPException
-    ) -> Union[JSONResponse, Response]:
+        request: _Request, exc: _HTTPException
+    ) -> _Union[_JSONResponse, _Response]:
         """
         This is a wrapper to the default HTTPException handler of FastAPI.
         This function will be called when a HTTPException is explicitly raised.
@@ -157,8 +210,8 @@ def create_app(
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(
-        request: Request, exc: Exception
-    ) -> PlainTextResponse:
+        request: _Request, exc: Exception
+    ) -> _PlainTextResponse:
         """
         This middleware will log all unhandled exceptions.
         Unhandled exceptions are all exceptions that are not HTTPExceptions or RequestValidationErrors.
@@ -170,26 +223,26 @@ def create_app(
             if request.query_params
             else request.url.path
         )
-        exception_type, exception_value, exception_traceback = sys.exc_info()
+        exception_type, exception_value, exception_traceback = _sys.exc_info()
         exception_name = getattr(exception_type, "__name__", None)
-        UVICORN_LOGGER.error(
+        _UVICORN_LOGGER.error(
             f'{host}:{port} - "{request.method} {url}" 500 Internal Server Error <{exception_name}: {exception_value}>'
         )
-        return PlainTextResponse(str(exc), status_code=500)
+        return _PlainTextResponse(str(exc), status_code=500)
 
     @app.get("/status", include_in_schema=False)
     async def get_api_status():
         return status_response
 
     @app.get("/docs", include_in_schema=False)
-    def swagger_ui_html(req: Request) -> HTMLResponse:
+    def swagger_ui_html(req: _Request) -> _HTMLResponse:
         root_path = req.scope.get("root_path", "").rstrip("/")
         openapi_url = root_path + app.openapi_url
         oauth2_redirect_url = app.swagger_ui_oauth2_redirect_url
         if oauth2_redirect_url:
             oauth2_redirect_url = root_path + oauth2_redirect_url
 
-        return get_swagger_ui_html(
+        return _get_swagger_ui_html(
             openapi_url=openapi_url,
             title=app.title + " - Swagger UI",
             oauth2_redirect_url=oauth2_redirect_url,
@@ -200,7 +253,7 @@ def create_app(
 
     @app.get("/redoc", include_in_schema=False)
     async def redoc_html():
-        return get_redoc_html(
+        return _get_redoc_html(
             openapi_url=app.openapi_url,
             title=app.title + " - ReDoc",
             redoc_favicon_url=redoc_favicon_url,
@@ -208,6 +261,6 @@ def create_app(
 
     @app.get("/")
     async def home():
-        return RedirectResponse("/docs")
+        return _RedirectResponse("/docs")
 
     return app

@@ -6,15 +6,39 @@ from alphaz_next.core.constants import HeaderEnum
 
 
 class ExtHeaders(TypedDict):
+    """
+    Represents the extended headers for a response.
+
+    Attributes:
+        pagination (Optional[str]): The pagination information.
+        status_description (Optional[Union[str, List[str]]]): The status description.
+        warning (Optional[bool]): Indicates if there is a warning.
+    """
+
     pagination: Optional[str]
     status_description: Optional[Union[str, List[str]]]
     warning: Optional[bool]
+
+
+from typing import Dict, Optional
+import json
 
 
 def extend_headers(
     headers: Dict[str, str] | None = None,
     ext_headers: ExtHeaders | None = None,
 ) -> Optional[Dict[str, str]]:
+    """
+    Extends the given headers dictionary with additional headers from ext_headers.
+
+    Args:
+        headers (Dict[str, str] | None): The original headers dictionary.
+        ext_headers (ExtHeaders | None): Additional headers to be added.
+
+    Returns:
+        Optional[Dict[str, str]]: The extended headers dictionary.
+
+    """
     if ext_headers is None:
         return headers
 
