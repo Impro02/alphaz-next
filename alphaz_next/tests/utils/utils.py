@@ -758,7 +758,7 @@ def load_expected_data(
                         expected_data = _open_file(file_path, encoding=encoding)
                     case _:
                         expected_data = {}
-            except FileNotFoundError | FileExistsError:
+            except (FileNotFoundError, FileExistsError):
                 expected_data = {}
 
             data = func(self, expected_data, file_path, *args, **kwargs)
