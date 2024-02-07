@@ -1,6 +1,6 @@
 from pysql_repo.asyncio import (
-    AsyncDatabase,
-    AsyncRepository,
-    AsyncService,
-    with_async_session,
+    AsyncDatabase as AsyncDatabase,
+    AsyncRepository as AsyncRepository,
+    AsyncService as AsyncService,
+    with_async_session as with_async_session,
 )

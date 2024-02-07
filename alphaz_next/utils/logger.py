@@ -20,7 +20,7 @@ DEFAULT_FORMAT = "%(asctime)s - %(levelname)-7s - %(process)5d - %(module)+15s.%
 DEFAULT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-class AlphaLogger:
+class Logger:
     """
     A custom logger class that provides logging functionality with various log levels and output options.
     """
