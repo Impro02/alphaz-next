@@ -13,6 +13,6 @@ pip install alphaz-next
 To access alphaz-next and its functions import it in your Python code like this:
 
 ```
-from alphaz-next import AlphaDatabase, AlphaLogger
+from alphaz-next import DataBase, Logger
 from alphaz-next.models.config.config_settings import create_config_settings
 ```
