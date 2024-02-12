@@ -2,7 +2,7 @@ httpx
 python-jose
 dependency-injector
 python-multipart
-fastapi>=0.100
+fastapi>=0.109.2
 pydantic_settings
 pydantic>=2.5
 sqlalchemy_utils
