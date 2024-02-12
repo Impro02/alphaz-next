@@ -2,6 +2,7 @@
 import sys as _sys
 from typing import (
     Any as _Any,
+    AsyncContextManager as _AsyncContextManager,
     Dict as _Dict,
     List as _List,
     Optional as _Optional,
@@ -108,6 +109,7 @@ def create_app(
     config: _AlphaConfigSchema,
     routers: _List[_APIRouter],
     container: _Optional[_containers.DeclarativeContainer] = None,
+    lifespan: _Optional[_AsyncContextManager] = None,
     allow_origins: _Sequence[str] = (),
     allow_methods: _Sequence[str] = ("GET",),
     allow_headers: _Sequence[str] = (),
@@ -140,6 +142,7 @@ def create_app(
         version=config.version,
         docs_url=None,
         redoc_url=None,
+        lifespan=lifespan,
     )
     app.container = container
 
