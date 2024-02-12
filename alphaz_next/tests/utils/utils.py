@@ -95,8 +95,6 @@ class _AlphaTest(_TestCase):
         """
         cls.app = cls.create_app()
 
-        cls.client = _TestClient(cls.app)
-
         cls.enable_reset_before_next_test()
 
     @classmethod
@@ -200,11 +198,12 @@ class _AlphaTest(_TestCase):
             with_fake_api_key=with_fake_api_key,
         )
 
-        response = self.client.get(
-            url,
-            params=params,
-            headers=headers,
-        )
+        with _TestClient(self.app) as client:
+            response = client.get(
+                url,
+                params=params,
+                headers=headers,
+            )
 
         status_code, data = self._post_process_response(
             response=response,
@@ -258,13 +257,14 @@ class _AlphaTest(_TestCase):
             with_fake_api_key=with_fake_api_key,
         )
 
-        response = self.client.put(
-            url,
-            data=data,
-            json=json,
-            params=params,
-            headers=headers,
-        )
+        with _TestClient(self.app) as client:
+            response = client.put(
+                url,
+                data=data,
+                json=json,
+                params=params,
+                headers=headers,
+            )
 
         status_code, data = self._post_process_response(
             response=response,
@@ -318,13 +318,14 @@ class _AlphaTest(_TestCase):
             with_fake_api_key=with_fake_api_key,
         )
 
-        response = self.client.patch(
-            url,
-            data=data,
-            json=json,
-            params=params,
-            headers=headers,
-        )
+        with _TestClient(self.app) as client:
+            response = client.patch(
+                url,
+                data=data,
+                json=json,
+                params=params,
+                headers=headers,
+            )
 
         status_code, data = self._post_process_response(
             response=response,
@@ -380,13 +381,14 @@ class _AlphaTest(_TestCase):
             with_fake_api_key=with_fake_api_key,
         )
 
-        response = self.client.post(
-            url,
-            data=data,
-            json=json,
-            params=params,
-            headers=headers,
-        )
+        with _TestClient(self.app) as client:
+            response = client.post(
+                url,
+                data=data,
+                json=json,
+                params=params,
+                headers=headers,
+            )
 
         status_code, data = self._post_process_response(
             response=response,
@@ -436,11 +438,12 @@ class _AlphaTest(_TestCase):
             with_fake_api_key=with_fake_api_key,
         )
 
-        response = self.client.delete(
-            url,
-            params=params,
-            headers=headers,
-        )
+        with _TestClient(self.app) as client:
+            response = client.delete(
+                url,
+                params=params,
+                headers=headers,
+            )
 
         status_code, data = self._post_process_response(
             response=response,
