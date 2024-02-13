@@ -7,6 +7,7 @@ from typing import (
     List as _List,
     Optional as _Optional,
     Sequence as _Sequence,
+    Type,
     Union as _Union,
 )
 
@@ -36,8 +37,12 @@ from fastapi.responses import (
     RedirectResponse as _RedirectResponse,
 )
 
-# DEPENDENCY_INJECTOR
-from dependency_injector import containers as _containers
+if "dependency_injector" in _sys.modules:
+    from dependency_injector import containers as _containers
+
+    _ContainerType = _containers.DeclarativeContainer
+else:
+    _ContainerType = _Any
 
 # ELASTICAPM
 from elasticapm.contrib.starlette import (
@@ -108,7 +113,7 @@ def _custom_openapi(
 def create_app(
     config: _AlphaConfigSchema,
     routers: _List[_APIRouter],
-    container: _Optional[_containers.DeclarativeContainer] = None,
+    container: _Optional[_ContainerType] = None,
     lifespan: _Optional[_AsyncContextManager] = None,
     allow_origins: _Sequence[str] = (),
     allow_methods: _Sequence[str] = ("GET",),
