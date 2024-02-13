@@ -1,9 +1,14 @@
 from setuptools import setup
 
-version = "0.3.11"
+version = "0.3.12"
 
 with open("requirements.txt") as f:
     required_packages = f.read().splitlines()
+
+
+EXTRAS_REQUIRE = {
+    "dependency-injector": ["dependency-injector"],
+}
 
 setup(
     name="alphaz-next",
@@ -25,6 +30,7 @@ setup(
         "alphaz_next.utils",
     ],
     install_requires=required_packages,
+    extras_require=EXTRAS_REQUIRE,
     license="MIT",
     author="Maxime MARTIN",
     author_email="maxime.martin02@hotmail.fr",
