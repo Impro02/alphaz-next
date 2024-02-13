@@ -1,6 +1,5 @@
 httpx
 python-jose
-dependency-injector
 python-multipart
 fastapi>=0.109.2
 pydantic_settings
