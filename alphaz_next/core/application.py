@@ -7,7 +7,6 @@ from typing import (
     List as _List,
     Optional as _Optional,
     Sequence as _Sequence,
-    Type,
     Union as _Union,
 )
 
@@ -29,7 +28,6 @@ from fastapi.openapi.docs import (
     get_redoc_html as _get_redoc_html,
 )
 from fastapi.openapi.utils import get_openapi as _get_openapi, BaseRoute as _BaseRoute
-from fastapi.middleware.cors import CORSMiddleware as _CORSMiddleware
 from fastapi.responses import (
     HTMLResponse as _HTMLResponse,
     JSONResponse as _JSONResponse,
@@ -56,8 +54,9 @@ from alphaz_next.models.config.alpha_config import (
 )
 
 # CORE
-from alphaz_next.core.middleware import (
+from alphaz_next.core._middleware import (
     log_request_middleware as _log_request_middleware,
+    CORSMiddleware as _CORSMiddleware,
 )
 from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER as _UVICORN_LOGGER
 
@@ -119,6 +118,7 @@ def create_app(
     allow_methods: _Sequence[str] = ("GET",),
     allow_headers: _Sequence[str] = (),
     allow_credentials: bool = False,
+    allow_private_network: bool = False,
     status_response: _Dict = {"status": "OK"},
 ) -> _FastAPI:
     """
@@ -127,12 +127,13 @@ def create_app(
     Args:
         config (AlphaConfigSchema): The configuration for the application.
         routers (List[APIRouter]): The list of API routers to include in the application.
-        container (Optional[containers.DeclarativeContainer], optional): The dependency injection container. Defaults to None.
-        allow_origins (Sequence[str], optional): The list of allowed origins for CORS. Defaults to ().
-        allow_methods (Sequence[str], optional): The list of allowed HTTP methods for CORS. Defaults to ("GET",).
-        allow_headers (Sequence[str], optional): The list of allowed headers for CORS. Defaults to ().
-        allow_credentials (bool, optional): Whether to allow credentials for CORS. Defaults to False.
-        status_response (Dict, optional): The response to return for the "/status" endpoint. Defaults to {"status": "OK"}.
+        container (Optional[containers.DeclarativeContainer]): The dependency injection container. Defaults to None.
+        allow_origins (Sequence[str]): The list of allowed origins for CORS. Defaults to ().
+        allow_methods (Sequence[str]): The list of allowed HTTP methods for CORS. Defaults to ("GET",).
+        allow_headers (Sequence[str]): The list of allowed headers for CORS. Defaults to ().
+        allow_credentials (bool): Whether to allow credentials for CORS. Defaults to False.
+        allow_private_network (bool): Whether to allow private network for CORS. Defaults to False.
+        status_response (Dict): The response to return for the "/status" endpoint. Defaults to {"status": "OK"}.
 
     Returns:
         FastAPI: The created FastAPI application.
@@ -157,6 +158,7 @@ def create_app(
         allow_credentials=allow_credentials,
         allow_methods=allow_methods,
         allow_headers=allow_headers,
+        allow_private_network=allow_private_network,
     )
 
     app.middleware("http")(_log_request_middleware)
