@@ -42,7 +42,7 @@ class CORSMiddleware(_CORSMiddleware):
         if allow_private_network:
             self.simple_headers[
                 HeaderEnum.ACCESS_CONTROL_ALLOW_PRIVATE_NETWORK.value
-            ] = True
+            ] = "true"
 
 
 async def log_request_middleware(request: Request, call_next):
