@@ -1,11 +1,14 @@
 # MODULES
 import http
 import time
-from typing import Any, Awaitable, Callable, MutableMapping, Sequence
+from typing import Optional, Sequence
 
 # FASTAPI
 from fastapi import Request, Response
 from fastapi.middleware.cors import CORSMiddleware as _CORSMiddleware
+
+# STARLETTE
+from starlette.types import ASGIApp
 
 # CORE
 from alphaz_next.core.constants import HeaderEnum
@@ -15,21 +18,14 @@ from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER
 class CORSMiddleware(_CORSMiddleware):
     def __init__(
         self,
-        app: Callable[
-            [
-                MutableMapping[str, Any],
-                Callable[[], Awaitable[MutableMapping[str, Any]]],
-                Callable[[MutableMapping[str, Any]], Awaitable[None]],
-            ],
-            Awaitable[None],
-        ],
-        allow_origins: Sequence[str] = ...,
-        allow_methods: Sequence[str] = ...,
-        allow_headers: Sequence[str] = ...,
-        allow_private_network: bool = False,
+        app: ASGIApp,
+        allow_origins: Sequence[str] = (),
+        allow_methods: Sequence[str] = ("GET",),
+        allow_headers: Sequence[str] = (),
         allow_credentials: bool = False,
-        allow_origin_regex: str | None = None,
-        expose_headers: Sequence[str] = ...,
+        allow_private_network: bool = False,
+        allow_origin_regex: Optional[str] = None,
+        expose_headers: Sequence[str] = (),
         max_age: int = 600,
     ) -> None:
         super().__init__(
