@@ -42,7 +42,7 @@ class AlphaDatabaseConfigSchema(_BaseModel):
         raise NotImplementedError()
 
 
-class _AlphaDatabaseOracleConfigSchema(AlphaDatabaseConfigSchema):
+class _AlphaDatabaseCxOracleConfigSchema(AlphaDatabaseConfigSchema):
     """
     Represents the configuration schema for an Oracle database connection using cx_oracle driver.
     """
@@ -52,7 +52,7 @@ class _AlphaDatabaseOracleConfigSchema(AlphaDatabaseConfigSchema):
     password: str
     port: int
     service_name: str
-    type: str
+    driver: str
 
     @_computed_field
     @property
@@ -161,14 +161,14 @@ def create_databases_config(
 
     configs = {}
     for k, v in data.items():
-        db_type = v.get("type")
+        driver = v.get("driver")
         v = _replace_reserved_config(
             v,
             reserved_config=reserved_config,
         )
-        match db_type:
-            case "oracle":
-                configs[k] = _AlphaDatabaseOracleConfigSchema.model_validate(v)
+        match driver:
+            case "cx_oracle":
+                configs[k] = _AlphaDatabaseCxOracleConfigSchema.model_validate(v)
             case "oracledb":
                 configs[k] = _AlphaDatabaseOracleDbConfigSchema.model_validate(v)
             case "oracledb_async":
@@ -178,6 +178,6 @@ def create_databases_config(
             case "aiosqlite":
                 configs[k] = _AlphaDatabaseAioSqliteConfigSchema.model_validate(v)
             case _:
-                _warnings.warn(f"database type {db_type} is not supported")
+                _warnings.warn(f"database type {driver} is not supported")
 
     return model.model_validate(configs)
