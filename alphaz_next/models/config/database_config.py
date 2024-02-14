@@ -31,6 +31,7 @@ class AlphaDatabaseConfigSchema(_BaseModel):
 
     model_config = _ConfigDict(from_attributes=True)
 
+    driver: str
     ini: bool = False
     init_database_dir_json: _Optional[str] = _Field(default=None)
     connect_args: _Optional[_Dict] = _Field(default=None)
@@ -52,7 +53,6 @@ class _AlphaDatabaseCxOracleConfigSchema(AlphaDatabaseConfigSchema):
     password: str
     port: int
     service_name: str
-    driver: str
 
     @_computed_field
     @property
@@ -76,7 +76,6 @@ class _AlphaDatabaseOracleDbConfigSchema(AlphaDatabaseConfigSchema):
     password: str
     port: int
     service_name: str
-    type: str
 
     @_computed_field
     @property
@@ -100,7 +99,6 @@ class _AlphaDatabaseOracleDbAsyncConfigSchema(AlphaDatabaseConfigSchema):
     password: str
     port: int
     service_name: str
-    type: str
 
     @_computed_field
     @property
