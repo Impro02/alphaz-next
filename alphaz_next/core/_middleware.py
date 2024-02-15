@@ -43,6 +43,9 @@ class CORSMiddleware(_CORSMiddleware):
             self.simple_headers[
                 HeaderEnum.ACCESS_CONTROL_ALLOW_PRIVATE_NETWORK.value
             ] = "true"
+            self.preflight_headers[
+                HeaderEnum.ACCESS_CONTROL_ALLOW_PRIVATE_NETWORK.value
+            ] = "true"
 
 
 async def log_request_middleware(request: Request, call_next):
