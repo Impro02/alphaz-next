@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 def make_request_with_retry(
     method: Literal["POST", "PATCH", "PUT", "DELETE", "GET"],
-    url,
+    url: str,
     max_retries: int = 3,
     retry_on_status: Optional[List[int]] = None,
     timeout: Optional[float] = None,
@@ -39,7 +39,7 @@ def make_request_with_retry(
     item_repr = {
         "method": method,
         "url": url,
-        "kwargs": kwargs,
+        "kwargs": {k: v for k, v in kwargs.items() if k in ["params", "headers"]},
     }
 
     retry_statuses = retry_on_status or []
@@ -102,7 +102,7 @@ async def make_async_request_with_retry(
     item_repr = {
         "method": method,
         "url": url,
-        "kwargs": kwargs,
+        "kwargs": {k: v for k, v in kwargs.items() if k in ["params", "headers"]},
     }
 
     retry_statuses = retry_on_status or []
