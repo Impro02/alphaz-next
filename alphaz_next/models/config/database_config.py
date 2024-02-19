@@ -3,7 +3,6 @@ from pathlib import Path as _Path
 from typing import (
     Dict as _Dict,
     Optional as _Optional,
-    Union,
 )
 
 # PYDANTIC
@@ -16,7 +15,7 @@ from pydantic import (
 )
 
 
-class _DatabaseConfigSchema(_BaseModel):
+class _DatabaseConfigBaseSchema(_BaseModel):
     """
     Represents the configuration schema for the Database.
     """
@@ -29,7 +28,7 @@ class _DatabaseConfigSchema(_BaseModel):
     connect_args: _Optional[_Dict] = _Field(default=None)
 
 
-class _DatabaseCxOracleConfigSchema(_DatabaseConfigSchema):
+class _DatabaseCxOracleConfigSchema(_DatabaseConfigBaseSchema):
     """
     Represents the configuration schema for an Oracle database connection using cx_oracle driver.
     """
@@ -52,7 +51,7 @@ class _DatabaseCxOracleConfigSchema(_DatabaseConfigSchema):
         )
 
 
-class _DatabaseOracleDbConfigSchema(_DatabaseConfigSchema):
+class _DatabaseOracleDbConfigSchema(_DatabaseConfigBaseSchema):
     """
     Represents the configuration schema for an Oracle database connection using oracledb driver.
     """
@@ -75,7 +74,7 @@ class _DatabaseOracleDbConfigSchema(_DatabaseConfigSchema):
         )
 
 
-class _DatabaseOracleDbAsyncConfigSchema(_DatabaseConfigSchema):
+class _DatabaseOracleDbAsyncConfigSchema(_DatabaseConfigBaseSchema):
     """
     Represents the configuration schema for an Oracle database connection using oracledb_async driver.
     """
@@ -98,7 +97,7 @@ class _DatabaseOracleDbAsyncConfigSchema(_DatabaseConfigSchema):
         )
 
 
-class _DatabaseSqliteConfigSchema(_DatabaseConfigSchema):
+class _DatabaseSqliteConfigSchema(_DatabaseConfigBaseSchema):
     """
     Represents the configuration schema for an SQLite database connection.
     """
@@ -116,7 +115,7 @@ class _DatabaseSqliteConfigSchema(_DatabaseConfigSchema):
         return f"sqlite:///{self.path}"
 
 
-class _DatabaseAioSqliteConfigSchema(_DatabaseConfigSchema):
+class _DatabaseAioSqliteConfigSchema(_DatabaseConfigBaseSchema):
     """
     Represents the configuration schema for an SQLite database connection using aiosqlite driver.
     """
@@ -133,6 +132,19 @@ class _DatabaseAioSqliteConfigSchema(_DatabaseConfigSchema):
         return f"sqlite+aiosqlite:///{self.path}"
 
 
+class DatabaseConfigSchema(_BaseModel):
+    """
+    Represents the configuration schema for the Database.
+    """
+
+    model_config = _ConfigDict(from_attributes=True)
+
+    connection_string: str
+    ini: bool = False
+    init_database_dir_json: _Optional[str] = _Field(default=None)
+    connect_args: _Optional[_Dict] = _Field(default=None)
+
+
 class DatabasesConfigSchema(_BaseModel):
     """
     Represents the configuration schema for the Databases.
@@ -142,13 +154,7 @@ class DatabasesConfigSchema(_BaseModel):
 
     databases: _Dict[
         str,
-        Union[
-            _DatabaseCxOracleConfigSchema,
-            _DatabaseOracleDbConfigSchema,
-            _DatabaseOracleDbAsyncConfigSchema,
-            _DatabaseSqliteConfigSchema,
-            _DatabaseAioSqliteConfigSchema,
-        ],
+        DatabaseConfigSchema,
     ]
 
     @_model_validator(mode="before")
@@ -157,24 +163,29 @@ class DatabasesConfigSchema(_BaseModel):
         data_tmp = {}
         for k, v in data.items():
             if "driver" not in v:
-                raise AttributeError("")
+                raise AttributeError("driver must be assigned in db config file")
 
             match (driver := v.get("driver")):
                 case "cx_oracle":
                     config = _DatabaseCxOracleConfigSchema(**v)
                     data_tmp[k] = config.model_dump()
+                    break
                 case "oracledb":
                     config = _DatabaseOracleDbConfigSchema(**v)
                     data_tmp[k] = config.model_dump()
+                    break
                 case "oracledb_async":
                     config = _DatabaseOracleDbAsyncConfigSchema(**v)
                     data_tmp[k] = config.model_dump()
+                    break
                 case "sqlite":
                     config = _DatabaseSqliteConfigSchema(**v)
                     data_tmp[k] = config.model_dump()
+                    break
                 case "aiosqlite":
                     config = _DatabaseAioSqliteConfigSchema(**v)
                     data_tmp[k] = config.model_dump()
+                    break
                 case _:
                     raise RuntimeError(f"database type {driver=} is not supported")
 
