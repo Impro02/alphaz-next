@@ -169,23 +169,18 @@ class DatabasesConfigSchema(_BaseModel):
                 case "cx_oracle":
                     config = _DatabaseCxOracleConfigSchema(**v)
                     data_tmp[k] = config.model_dump()
-                    break
                 case "oracledb":
                     config = _DatabaseOracleDbConfigSchema(**v)
                     data_tmp[k] = config.model_dump()
-                    break
                 case "oracledb_async":
                     config = _DatabaseOracleDbAsyncConfigSchema(**v)
                     data_tmp[k] = config.model_dump()
-                    break
                 case "sqlite":
                     config = _DatabaseSqliteConfigSchema(**v)
                     data_tmp[k] = config.model_dump()
-                    break
                 case "aiosqlite":
                     config = _DatabaseAioSqliteConfigSchema(**v)
                     data_tmp[k] = config.model_dump()
-                    break
                 case _:
                     raise RuntimeError(f"database type {driver=} is not supported")
 
