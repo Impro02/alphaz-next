@@ -3,10 +3,8 @@ from pathlib import Path as _Path
 from typing import (
     Dict as _Dict,
     Optional as _Optional,
-    Type as _Type,
-    TypeVar as _TypeVar,
+    Union,
 )
-import warnings as _warnings
 
 # PYDANTIC
 from pydantic import (
@@ -14,19 +12,13 @@ from pydantic import (
     ConfigDict as _ConfigDict,
     Field as _Field,
     computed_field as _computed_field,
-)
-
-# LIBS
-from alphaz_next.libs.file_lib import open_json_file as _open_json_file
-from alphaz_next.models.config._base.utils import (
-    ReservedConfigItem as _ReservedConfigItem,
-    replace_reserved_config as _replace_reserved_config,
+    model_validator as _model_validator,
 )
 
 
-class AlphaDatabaseConfigSchema(_BaseModel):
+class _DatabaseConfigSchema(_BaseModel):
     """
-    Represents the configuration schema for the Alpha Database.
+    Represents the configuration schema for the Database.
     """
 
     model_config = _ConfigDict(from_attributes=True)
@@ -35,15 +27,9 @@ class AlphaDatabaseConfigSchema(_BaseModel):
     ini: bool = False
     init_database_dir_json: _Optional[str] = _Field(default=None)
     connect_args: _Optional[_Dict] = _Field(default=None)
-    create_on_start: bool = False
-
-    @_computed_field
-    @property
-    def connection_string(self) -> str:
-        raise NotImplementedError()
 
 
-class _AlphaDatabaseCxOracleConfigSchema(AlphaDatabaseConfigSchema):
+class _DatabaseCxOracleConfigSchema(_DatabaseConfigSchema):
     """
     Represents the configuration schema for an Oracle database connection using cx_oracle driver.
     """
@@ -66,7 +52,7 @@ class _AlphaDatabaseCxOracleConfigSchema(AlphaDatabaseConfigSchema):
         )
 
 
-class _AlphaDatabaseOracleDbConfigSchema(AlphaDatabaseConfigSchema):
+class _DatabaseOracleDbConfigSchema(_DatabaseConfigSchema):
     """
     Represents the configuration schema for an Oracle database connection using oracledb driver.
     """
@@ -89,7 +75,7 @@ class _AlphaDatabaseOracleDbConfigSchema(AlphaDatabaseConfigSchema):
         )
 
 
-class _AlphaDatabaseOracleDbAsyncConfigSchema(AlphaDatabaseConfigSchema):
+class _DatabaseOracleDbAsyncConfigSchema(_DatabaseConfigSchema):
     """
     Represents the configuration schema for an Oracle database connection using oracledb_async driver.
     """
@@ -112,7 +98,7 @@ class _AlphaDatabaseOracleDbAsyncConfigSchema(AlphaDatabaseConfigSchema):
         )
 
 
-class _AlphaDatabaseSqliteConfigSchema(AlphaDatabaseConfigSchema):
+class _DatabaseSqliteConfigSchema(_DatabaseConfigSchema):
     """
     Represents the configuration schema for an SQLite database connection.
     """
@@ -130,7 +116,7 @@ class _AlphaDatabaseSqliteConfigSchema(AlphaDatabaseConfigSchema):
         return f"sqlite:///{self.path}"
 
 
-class _AlphaDatabaseAioSqliteConfigSchema(AlphaDatabaseConfigSchema):
+class _DatabaseAioSqliteConfigSchema(_DatabaseConfigSchema):
     """
     Represents the configuration schema for an SQLite database connection using aiosqlite driver.
     """
@@ -147,35 +133,49 @@ class _AlphaDatabaseAioSqliteConfigSchema(AlphaDatabaseConfigSchema):
         return f"sqlite+aiosqlite:///{self.path}"
 
 
-_T = _TypeVar("_T", bound=_BaseModel)
+class DatabasesConfigSchema(_BaseModel):
+    """
+    Represents the configuration schema for the Databases.
+    """
 
+    model_config = _ConfigDict(from_attributes=True)
 
-def create_databases_config(
-    model: _Type[_T],
-    databases_config_path: _Path,
-    reserved_config: _ReservedConfigItem,
-) -> _Optional[_T]:
-    data = _open_json_file(path=databases_config_path)
+    databases: _Dict[
+        str,
+        Union[
+            _DatabaseCxOracleConfigSchema,
+            _DatabaseOracleDbConfigSchema,
+            _DatabaseOracleDbAsyncConfigSchema,
+            _DatabaseSqliteConfigSchema,
+            _DatabaseAioSqliteConfigSchema,
+        ],
+    ]
 
-    configs = {}
-    for k, v in data.items():
-        driver = v.get("driver")
-        v = _replace_reserved_config(
-            v,
-            reserved_config=reserved_config,
-        )
-        match driver:
-            case "cx_oracle":
-                configs[k] = _AlphaDatabaseCxOracleConfigSchema.model_validate(v)
-            case "oracledb":
-                configs[k] = _AlphaDatabaseOracleDbConfigSchema.model_validate(v)
-            case "oracledb_async":
-                configs[k] = _AlphaDatabaseOracleDbAsyncConfigSchema.model_validate(v)
-            case "sqlite":
-                configs[k] = _AlphaDatabaseSqliteConfigSchema.model_validate(v)
-            case "aiosqlite":
-                configs[k] = _AlphaDatabaseAioSqliteConfigSchema.model_validate(v)
-            case _:
-                _warnings.warn(f"database type {driver} is not supported")
+    @_model_validator(mode="before")
+    @classmethod
+    def validate_config(cls, data: _Dict) -> _Dict:
+        data_tmp = {}
+        for k, v in data.items():
+            if "driver" not in v:
+                raise AttributeError("")
 
-    return model.model_validate(configs)
+            match (driver := v.get("driver")):
+                case "cx_oracle":
+                    config = _DatabaseCxOracleConfigSchema(**v)
+                    data_tmp[k] = config.model_dump()
+                case "oracledb":
+                    config = _DatabaseOracleDbConfigSchema(**v)
+                    data_tmp[k] = config.model_dump()
+                case "oracledb_async":
+                    config = _DatabaseOracleDbAsyncConfigSchema(**v)
+                    data_tmp[k] = config.model_dump()
+                case "sqlite":
+                    config = _DatabaseSqliteConfigSchema(**v)
+                    data_tmp[k] = config.model_dump()
+                case "aiosqlite":
+                    config = _DatabaseAioSqliteConfigSchema(**v)
+                    data_tmp[k] = config.model_dump()
+                case _:
+                    raise RuntimeError(f"database type {driver=} is not supported")
+
+        return {"databases": data_tmp}
