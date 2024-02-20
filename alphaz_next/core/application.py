@@ -1,4 +1,7 @@
 # MODULES
+import logging as _logging
+from logging.handlers import TimedRotatingFileHandler as _TimedRotatingFileHandler
+from pathlib import Path as _Path
 import sys as _sys
 from typing import (
     Any as _Any,
@@ -64,6 +67,10 @@ from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER as _UVICORN_LOGGER
 from alphaz_next.utils.logging_filters import (
     ExcludeRoutersFilter as _ExcludeRoutersFilter,
 )
+from alphaz_next.utils.logger import (
+    DEFAULT_DATE_FORMAT as _DEFAULT_DATE_FORMAT,
+    DEFAULT_FORMAT as _DEFAULT_FORMAT,
+)
 
 
 # ELASTICAPM
@@ -120,6 +127,7 @@ def create_app(
     allow_credentials: bool = False,
     allow_private_network: bool = False,
     status_response: _Dict = {"status": "OK"},
+    uvicorn_formatter: _Optional[_logging.Formatter] = None,
 ) -> _FastAPI:
     """
     Create a FastAPI application with the specified configuration.
@@ -134,13 +142,37 @@ def create_app(
         allow_credentials (bool): Whether to allow credentials for CORS. Defaults to False.
         allow_private_network (bool): Whether to allow private network for CORS. Defaults to False.
         status_response (Dict): The response to return for the "/status" endpoint. Defaults to {"status": "OK"}.
+        uvicorn_formatter (Optional[_logging.Formatter]): The formatter used in time rotating file handler if time rotating logging config exists. If None, use the default one.
 
     Returns:
         FastAPI: The created FastAPI application.
     """
-    _UVICORN_LOGGER.addFilter(
-        _ExcludeRoutersFilter(router_names=config.api_config.logging.excluded_routers)
-    )
+
+    if (
+        config.api_config.logging is not None
+        and config.api_config.logging.time_rotating is not None
+    ):
+        if uvicorn_formatter is None:
+            uvicorn_formatter = _logging.Formatter(
+                _DEFAULT_FORMAT,
+                datefmt=_DEFAULT_DATE_FORMAT,
+            )
+
+        handler = _TimedRotatingFileHandler(
+            filename=_Path(config.api_config.directories.logs) / "uvicorn.log",
+            when=config.api_config.logging.time_rotating.when,
+            interval=config.api_config.logging.time_rotating.interval,
+            backupCount=config.api_config.logging.time_rotating.backup_count,
+        )
+        handler.setFormatter(uvicorn_formatter)
+
+        _UVICORN_LOGGER.addHandler(handler)
+
+        _UVICORN_LOGGER.addFilter(
+            _ExcludeRoutersFilter(
+                router_names=config.api_config.logging.excluded_routers
+            )
+        )
 
     # APP
     app = _FastAPI(
