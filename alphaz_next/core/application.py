@@ -158,8 +158,11 @@ def create_app(
                 datefmt=_DEFAULT_DATE_FORMAT,
             )
 
+        directory_path = _Path(config.api_config.directories.logs)
+        directory_path.mkdir(parents=True, exist_ok=True)
+
         handler = _TimedRotatingFileHandler(
-            filename=_Path(config.api_config.directories.logs) / "uvicorn.log",
+            filename=directory_path / "uvicorn.log",
             when=config.api_config.logging.time_rotating.when,
             interval=config.api_config.logging.time_rotating.interval,
             backupCount=config.api_config.logging.time_rotating.backup_count,
