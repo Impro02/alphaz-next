@@ -10,4 +10,4 @@ email-validator
 deepdiff
 unidecode
 elastic-apm
-pysql-repo>=0.5.11
+pysql-repo>=0.5.12
