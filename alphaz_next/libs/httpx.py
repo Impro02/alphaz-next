@@ -67,7 +67,7 @@ def make_request_with_retry(
         except Exception as ex:
             raise RuntimeError(
                 f"An unknown error occurs while contacting external server {item_repr}"
-            )
+            ) from ex
         else:
             return response
 
@@ -130,7 +130,7 @@ async def make_async_request_with_retry(
         except Exception as ex:
             raise RuntimeError(
                 f"An unknown error occurs while contacting external server {item_repr}"
-            )
+            ) from ex
         else:
             return response
 
