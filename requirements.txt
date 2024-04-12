@@ -1,7 +1,7 @@
 httpx
 python-jose
 python-multipart
-fastapi>=0.109.2
+fastapi>=0.108.0
 pydantic_settings
 pydantic>=2.5
 sqlalchemy_utils
