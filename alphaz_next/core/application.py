@@ -118,7 +118,8 @@ def _custom_openapi(
 
 def create_app(
     config: _AlphaConfigSchema,
-    routers: _List[_APIRouter],
+    routes: _Optional[_BaseRoute] = None,
+    routers: _Optional[_List[_APIRouter]] = None,
     container: _Optional[_ContainerType] = None,
     lifespan: _Optional[_AsyncContextManager] = None,
     allow_origins: _Sequence[str] = (),
@@ -134,6 +135,7 @@ def create_app(
 
     Args:
         config (AlphaConfigSchema): The configuration for the application.
+        routes (Optional[BaseRoute]): The list of routes to include in the application. Defaults to None.
         routers (List[APIRouter]): The list of API routers to include in the application.
         container (Optional[containers.DeclarativeContainer]): The dependency injection container. Defaults to None.
         allow_origins (Sequence[str]): The list of allowed origins for CORS. Defaults to ().
@@ -179,6 +181,7 @@ def create_app(
 
     # APP
     app = _FastAPI(
+        routes=routes,
         title=config.project_name.upper(),
         version=config.version,
         docs_url=None,
@@ -211,7 +214,7 @@ def create_app(
 
         app.add_middleware(_ElasticAPM, client=apm)
 
-    for router in routers:
+    for router in routers or []:
         app.include_router(router)
 
     app.openapi_schema = _custom_openapi(config=config, routes=app.routes)
