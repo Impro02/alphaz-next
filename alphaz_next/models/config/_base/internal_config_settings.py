@@ -25,10 +25,25 @@ def create_internal_config(
     """
 
     class AlphaInternalConfigSettingsSchema(BaseSettings):
-        token_url: str = Field(validation_alias=token_url_alias)
-        user_me_url: str = Field(validation_alias=user_me_url_alias)
-        api_key_me_url: str = Field(validation_alias=api_key_me_url_alias)
-        secret_key: str = Field(validation_alias=secret_key_alias)
-        algorithm: str = Field(validation_alias=algorithm_alias)
+        token_url: str = Field(
+            default="/auth",
+            validation_alias=token_url_alias,
+        )
+        user_me_url: str = Field(
+            default="user/me",
+            validation_alias=user_me_url_alias,
+        )
+        api_key_me_url: str = Field(
+            default="api-key/me",
+            validation_alias=api_key_me_url_alias,
+        )
+        secret_key: str = Field(
+            default="",
+            validation_alias=secret_key_alias,
+        )
+        algorithm: str = Field(
+            default="",
+            validation_alias=algorithm_alias,
+        )
 
     return AlphaInternalConfigSettingsSchema()
