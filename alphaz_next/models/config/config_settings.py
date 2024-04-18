@@ -39,10 +39,10 @@ def create_config_settings(
     """
 
     class AlphaConfigSettingsSchema(_BaseSettings):
-        environment: str = _Field(validation_alias=environment_alias)
-        root: str = _Field(validation_alias=root_alias)
-        port: int = _Field(validation_alias=port_alias)
-        workers: int = _Field(validation_alias=workers_alias)
+        environment: str = _Field(default="local", validation_alias=environment_alias)
+        root: str = _Field(default=str(_Path.cwd()), validation_alias=root_alias)
+        port: int = _Field(default=8000, validation_alias=port_alias)
+        workers: int = _Field(default=1, validation_alias=workers_alias)
 
         @_computed_field
         @property
