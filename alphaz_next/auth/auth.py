@@ -1,5 +1,12 @@
 # MODULES
-from typing import Annotated as _Annotated, Any as _Any, Dict as _Dict, List as _List
+from typing import (
+    Annotated as _Annotated,
+    Any as _Any,
+    Dict as _Dict,
+    List as _List,
+    Type,
+    TypeVar,
+)
 
 # FASTAPI
 from fastapi import Depends as _Depends, status as _status
@@ -19,10 +26,7 @@ from alphaz_next.libs.httpx import (
 )
 
 # MODELS
-from alphaz_next.models.auth.user import (
-    UserSchema as _UserSchema,
-    UserShortSchema as _UserShortSchema,
-)
+from alphaz_next.models.auth.user import UserBaseSchema as _UserBaseSchema
 from alphaz_next.models.config._base.internal_config_settings import (
     create_internal_config as _create_internal_config,
 )
@@ -38,6 +42,8 @@ INTERNAL_CONFIG = _create_internal_config()
 
 API_KEY_HEADER = _APIKeyHeader(name="api_key", auto_error=False)
 OAUTH2_SCHEME = _OAuth2PasswordBearer(tokenUrl=INTERNAL_CONFIG.token_url)
+
+_T = TypeVar("_T", bound=_UserBaseSchema)
 
 
 def decode_token(token: str) -> _Dict[str, _Any]:
@@ -69,18 +75,19 @@ def decode_token(token: str) -> _Dict[str, _Any]:
     return payload
 
 
-async def get_user(token: str) -> _UserSchema:
+async def get_user(token: str, schema: Type[_T]) -> _T:
     """
     Retrieves user information using the provided token.
 
     Args:
         token (str): The authentication token.
+        schema (Type[_T]): The schema type to validate the response against.
 
     Returns:
-        UserSchema: The user information.
+        _T: The user information.
 
     Raises:
-        Exception: If there is an error retrieving the user information.
+        Any: Any exception raised during the request or response processing.
     """
     decode_token(token=token)
 
@@ -98,20 +105,20 @@ async def get_user(token: str) -> _UserSchema:
 
     return _post_process_http_response(
         response,
-        schema=_UserSchema,
+        schema=schema,
     )
 
 
-async def get_api_key(api_key: str) -> _UserShortSchema:
+async def get_api_key(api_key: str, schema: Type[_T]) -> _T:
     """
-    Retrieves user information using the provided API key.
+    Retrieves the API key using the provided `api_key` and returns the processed response.
 
     Args:
-        api_key (str): The API key for authentication.
+        api_key (str): The API key to be used for authentication.
+        schema (Type[_T]): The type of the response schema.
 
     Returns:
-        UserShortSchema: The user information.
-
+        _T: The processed response based on the provided schema.
     """
     headers = {
         "api_key": api_key,
@@ -127,12 +134,13 @@ async def get_api_key(api_key: str) -> _UserShortSchema:
 
     return _post_process_http_response(
         response,
-        schema=_UserShortSchema,
+        schema=schema,
     )
 
 
 def check_user_permissions(
-    permissions: _List[str], user_permissions: _List[str]
+    permissions: _List[str],
+    user_permissions: _List[str],
 ) -> None:
     """
     Check if the user has the required permissions.
@@ -151,24 +159,27 @@ def check_user_permissions(
 
 
 async def get_user_from_jwt(
+    schema: Type[_T],
     security_scopes: _SecurityScopes,
     token: _Annotated[str, _Depends(OAUTH2_SCHEME)],
-) -> _UserSchema:
+) -> _T:
     """
-    Retrieves the user from the JWT token and performs permission checks.
+    Retrieves a user from a JWT token and performs permission checks.
 
     Args:
-        security_scopes (SecurityScopes): The security scopes required for the endpoint.
-        token (str): The JWT token.
+        schema (Type[_T]): The schema type used to deserialize the user data.
+        security_scopes (_SecurityScopes): The security scopes required for the user.
+        token (_Annotated[str, _Depends(OAUTH2_SCHEME)]): The JWT token.
 
     Returns:
-        UserSchema: The user object.
+        _T: The deserialized user object.
 
     Raises:
-        HTTPException: If the credentials are invalid or the user does not have enough permissions.
+        _HTTPException: If the credentials are invalid or the user does not have enough permissions.
     """
+
     try:
-        user = await get_user(token=token)
+        user = await get_user(token=token, schema=schema)
 
         check_user_permissions(
             permissions=security_scopes.scopes,
@@ -200,30 +211,33 @@ async def get_user_from_jwt(
 
 
 async def get_user_from_api_key(
+    schema: Type[_T],
     security_scopes: _SecurityScopes,
     api_key: _Annotated[
         str,
         _Depends(API_KEY_HEADER),
     ],
-) -> _UserShortSchema:
+) -> _T:
     """
-    Retrieves a user from the API key and performs permission checks.
+    Retrieves a user from the API key.
 
     Args:
-        security_scopes (SecurityScopes): The security scopes required for the endpoint.
-        api_key (str): The API key provided in the request header.
+        schema (Type[_T]): The schema type.
+        security_scopes (_SecurityScopes): The security scopes.
+        api_key (_Annotated[str, _Depends(API_KEY_HEADER)]): The API key.
 
     Returns:
-        UserShortSchema: The user associated with the API key.
+        _T: The user retrieved from the API key.
 
     Raises:
-        HTTPException: If the API key is invalid or the user does not have sufficient permissions.
+        _HTTPException: If the credentials are invalid or the user doesn't have enough permissions.
     """
+
     try:
         if api_key is None:
             raise _InvalidCredentialsError()
 
-        user = await get_api_key(api_key=api_key)
+        user = await get_api_key(api_key=api_key, schema=schema)
 
         check_user_permissions(
             permissions=security_scopes.scopes,
