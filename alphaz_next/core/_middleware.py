@@ -2,6 +2,7 @@
 import http
 import time
 from typing import Optional, Sequence
+from loguru import logger
 
 # FASTAPI
 from fastapi import Request, Response
@@ -12,7 +13,8 @@ from starlette.types import ASGIApp
 
 # CORE
 from alphaz_next.core.constants import HeaderEnum
-from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER
+
+uvicorn_logger = logger.bind(service="uvicorn")
 
 
 class CORSMiddleware(_CORSMiddleware):
@@ -72,7 +74,8 @@ async def log_request_middleware(request: Request, call_next):
 
     response.headers[HeaderEnum.PROCESS_TIME.value] = str(process_time)
 
-    UVICORN_LOGGER.info(
-        f'{host}:{port} - "{request.method} {url}" {response.status_code} {status_phrase} {formatted_process_time}ms'
-    )
+    with uvicorn_logger.contextualize(endpoint=request.base_url):
+        uvicorn_logger.info(
+            f'{host}:{port} - "{request.method} {url}" {response.status_code} {status_phrase} {formatted_process_time}ms'
+        )
     return response
