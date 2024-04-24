@@ -11,3 +11,4 @@ deepdiff
 unidecode
 elastic-apm
 pysql-repo>=0.5.13
+loguru

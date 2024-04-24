@@ -1,7 +1,4 @@
 # MODULES
-import logging as _logging
-from logging.handlers import TimedRotatingFileHandler as _TimedRotatingFileHandler
-from pathlib import Path as _Path
 import sys as _sys
 from typing import (
     Any as _Any,
@@ -12,6 +9,8 @@ from typing import (
     Sequence as _Sequence,
     Union as _Union,
 )
+import logging
+from loguru import logger
 
 # FASTAPI
 from fastapi import (
@@ -38,13 +37,6 @@ from fastapi.responses import (
     RedirectResponse as _RedirectResponse,
 )
 
-if "dependency_injector" in _sys.modules:
-    from dependency_injector import containers as _containers
-
-    _ContainerType = _containers.DeclarativeContainer
-else:
-    _ContainerType = _Any
-
 # ELASTICAPM
 from elasticapm.contrib.starlette import (
     make_apm_client as _make_apm_client,
@@ -61,21 +53,16 @@ from alphaz_next.core._middleware import (
     log_request_middleware as _log_request_middleware,
     CORSMiddleware as _CORSMiddleware,
 )
-from alphaz_next.core.uvicorn_logger import UVICORN_LOGGER as _UVICORN_LOGGER
-
-# UTILS
-from alphaz_next.utils.logging_filters import (
-    ExcludeRoutersFilter as _ExcludeRoutersFilter,
-)
-from alphaz_next.utils.logger import (
-    DEFAULT_DATE_FORMAT as _DEFAULT_DATE_FORMAT,
-    DEFAULT_FORMAT as _DEFAULT_FORMAT,
-)
 
 
 # ELASTICAPM
 
 _DEFAULT_FAVICON_URL = "https://fastapi.tiangolo.com/img/favicon.png"
+
+_uvicorn_access = logging.getLogger("uvicorn.access")
+_uvicorn_access.disabled = True
+
+uvicorn_logger = logger.bind(service="uvicorn")
 
 
 def _custom_openapi(
@@ -120,7 +107,6 @@ def create_app(
     config: _AlphaConfigSchema,
     routes: _Optional[_BaseRoute] = None,
     routers: _Optional[_List[_APIRouter]] = None,
-    container: _Optional[_ContainerType] = None,
     lifespan: _Optional[_AsyncContextManager] = None,
     allow_origins: _Sequence[str] = (),
     allow_methods: _Sequence[str] = ("GET",),
@@ -128,7 +114,6 @@ def create_app(
     allow_credentials: bool = False,
     allow_private_network: bool = False,
     status_response: _Dict = {"status": "OK"},
-    uvicorn_formatter: _Optional[_logging.Formatter] = None,
 ) -> _FastAPI:
     """
     Create a FastAPI application with the specified configuration.
@@ -144,39 +129,23 @@ def create_app(
         allow_credentials (bool): Whether to allow credentials for CORS. Defaults to False.
         allow_private_network (bool): Whether to allow private network for CORS. Defaults to False.
         status_response (Dict): The response to return for the "/status" endpoint. Defaults to {"status": "OK"}.
-        uvicorn_formatter (Optional[_logging.Formatter]): The formatter used in time rotating file handler if time rotating logging config exists. If None, use the default one.
 
     Returns:
         FastAPI: The created FastAPI application.
     """
 
-    if (
-        config.api_config.logging is not None
-        and config.api_config.logging.time_rotating is not None
-    ):
-        if uvicorn_formatter is None:
-            uvicorn_formatter = _logging.Formatter(
-                _DEFAULT_FORMAT,
-                datefmt=_DEFAULT_DATE_FORMAT,
-            )
-
-        directory_path = _Path(config.api_config.directories.logs)
-        directory_path.mkdir(parents=True, exist_ok=True)
-
-        handler = _TimedRotatingFileHandler(
-            filename=directory_path / "uvicorn.log",
-            when=config.api_config.logging.time_rotating.when,
-            interval=config.api_config.logging.time_rotating.interval,
-            backupCount=config.api_config.logging.time_rotating.backup_count,
-        )
-        handler.setFormatter(uvicorn_formatter)
-
-        _UVICORN_LOGGER.addHandler(handler)
-
-        _UVICORN_LOGGER.addFilter(
-            _ExcludeRoutersFilter(
-                router_names=config.api_config.logging.excluded_routers
-            )
+    if config.api_config.logging is not None:
+        uvicorn_logger.add(
+            _sys.stderr,
+            level=config.api_config.logging.level.upper(),
+            filter=lambda record: all(
+                [
+                    record["service"] == "uvicorn",
+                    record["endpoint"]
+                    not in config.api_config.logging.excluded_routers,
+                ]
+            ),
+            colorize=True,
         )
 
     # APP
@@ -188,7 +157,6 @@ def create_app(
         redoc_url=None,
         lifespan=lifespan,
     )
-    app.container = container
 
     app.add_middleware(
         _CORSMiddleware,
@@ -243,7 +211,9 @@ def create_app(
             "body": body.decode(),
             "query_params": query_params,
         }
-        _UVICORN_LOGGER.info(detail)
+
+        with uvicorn_logger.contextualize(endpoint=request.base_url):
+            uvicorn_logger.info(detail)
         return await _request_validation_exception_handler(request, exc)
 
     @app.exception_handler(_HTTPException)
@@ -273,9 +243,11 @@ def create_app(
         )
         exception_type, exception_value, exception_traceback = _sys.exc_info()
         exception_name = getattr(exception_type, "__name__", None)
-        _UVICORN_LOGGER.error(
-            f'{host}:{port} - "{request.method} {url}" 500 Internal Server Error <{exception_name}: {exception_value}>'
-        )
+
+        with uvicorn_logger.contextualize(endpoint=request.base_url):
+            uvicorn_logger.error(
+                f'{host}:{port} - "{request.method} {url}" 500 Internal Server Error <{exception_name}: {exception_value}>'
+            )
         return _PlainTextResponse(str(exc), status_code=500)
 
     @app.get("/status", include_in_schema=False)

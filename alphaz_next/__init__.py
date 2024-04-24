@@ -7,4 +7,3 @@ from pysql_repo import (
     Operators as Operators,
     RelationshipOption as RelationshipOption,
 )
-from alphaz_next.utils.logger import Logger as Logger
