@@ -1,4 +1,5 @@
 # MODULES
+import os
 import sys as _sys
 from typing import (
     Any as _Any,
@@ -37,11 +38,16 @@ from fastapi.responses import (
     RedirectResponse as _RedirectResponse,
 )
 
-# ELASTICAPM
-from elasticapm.contrib.starlette import (
-    make_apm_client as _make_apm_client,
-    ElasticAPM as _ElasticAPM,
-)
+# OPENTELEMETRY
+from opentelemetry import metrics, trace
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 # MODELS
 from alphaz_next.models.config.alpha_config import (
@@ -101,6 +107,102 @@ def _custom_openapi(
     )
 
     return openapi_schema
+
+
+def _setup_opentelemetry(config: _AlphaConfigSchema, app: _FastAPI) -> None:
+    """
+    Sets up OpenTelemetry for the application.
+
+    Args:
+        config (_AlphaConfigSchema): The configuration object.
+        app (_FastAPI): The FastAPI application object.
+
+    Returns:
+        None
+    """
+
+    if config.api_config.apm is None or not config.api_config.apm.active:
+        return None
+
+    otel_service_name = config.project_name
+    apm_server_url = config.api_config.apm.server_url
+    certificate_path = config.api_config.apm.certificate_file
+    environment = config.environment.lower()
+    version = config.version
+
+    otel_exporter_otlp_headers = os.environ.get(
+        "OTEL_EXPORTER_OTLP_HEADERS",
+        None,
+    )
+
+    otel_exporter_otlp_endpoint = os.environ.get(
+        "OTEL_EXPORTER_OTLP_ENDPOINT",
+        apm_server_url,
+    )
+
+    otel_exporter_otl_certificate = os.environ.get(
+        "OTEL_EXPORTER_OTLP_CERTIFICATE",
+        certificate_path,
+    )
+
+    # Ressource
+    resource_attributes = (
+        os.environ.get("OTEL_RESOURCE_ATTRIBUTES")
+        or f"service.version={version},deployment.environment={environment}"
+    )
+    key_value_pairs = resource_attributes.split(",")
+    result_dict = {}
+
+    for pair in key_value_pairs:
+        key, value = pair.split("=")
+        result_dict[key] = value
+
+    resourceAttributes = {
+        "service.name": otel_service_name,
+        "service.version": result_dict["service.version"],
+        "deployment.environment": result_dict["deployment.environment"],
+    }
+
+    resource = Resource.create(resourceAttributes)
+
+    # Traces
+    otel_exported_otlp_traces_endpoint = os.environ.get(
+        "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+        f"{otel_exporter_otlp_endpoint}/v1/traces",
+    )
+
+    exporter = OTLPSpanExporter(
+        endpoint=otel_exported_otlp_traces_endpoint,
+        certificate_file=otel_exporter_otl_certificate,
+        headers=otel_exporter_otlp_headers,
+    )
+
+    processor = BatchSpanProcessor(exporter)
+    traceProvider = TracerProvider(resource=resource)
+    traceProvider.add_span_processor(processor)
+    trace.set_tracer_provider(traceProvider)
+
+    provider = TracerProvider(resource=resource)
+    provider.add_span_processor(processor)
+
+    # Metrics
+    otel_exported_otlp_metrics_endpoint = os.environ.get(
+        "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
+        f"{otel_exporter_otlp_endpoint}/v1/metrics",
+    )
+    exporter = OTLPMetricExporter(
+        endpoint=otel_exported_otlp_metrics_endpoint,
+        certificate_file=otel_exporter_otl_certificate,
+        headers=otel_exporter_otlp_headers,
+    )
+    reader = PeriodicExportingMetricReader(exporter=exporter)
+    meterProvider = MeterProvider(
+        resource=resource,
+        metric_readers=[reader],
+    )
+    metrics.set_meter_provider(meterProvider)
+
+    FastAPIInstrumentor().instrument_app(app)
 
 
 def create_app(
@@ -169,21 +271,9 @@ def create_app(
 
     app.middleware("http")(_log_request_middleware)
 
-    if config.api_config.apm is not None and config.api_config.apm.active:
-        apm = _make_apm_client(
-            {
-                "SERVICE_NAME": config.project_name,
-                "ENVIRONMENT": config.api_config.apm.environment,
-                "SERVER_URL": config.api_config.apm.server_url,
-                "SERVER_CERT": config.api_config.apm.ssl_ca_cert,
-                "VERIFY_SERVER_CERT": config.api_config.apm.ssl_verify,
-            }
-        )
+    _setup_opentelemetry(config=config, app=app)
 
-        app.add_middleware(_ElasticAPM, client=apm)
-
-    for router in routers or []:
-        app.include_router(router)
+    [app.include_router(router) for router in routers or []]
 
     app.openapi_schema = _custom_openapi(config=config, routes=app.routes)
 

@@ -9,6 +9,9 @@ pytz
 email-validator
 deepdiff
 unidecode
-elastic-apm
 pysql-repo>=0.5.13
 loguru
+opentelemetry-api
+opentelemetry-exporter-otlp-proto-http
+opentelemetry-instrumentation-fastapi
+opentelemetry-sdk
