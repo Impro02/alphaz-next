@@ -1,4 +1,4 @@
-from pysql_repo import DataBase as DataBase
+from alphaz_next.utils.database import DataBase as Database
 from pysql_repo import (
     Repository as Repository,
     Service as Service,

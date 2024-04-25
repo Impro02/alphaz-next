@@ -14,4 +14,5 @@ loguru
 opentelemetry-api
 opentelemetry-exporter-otlp-proto-http
 opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-sqlalchemy
 opentelemetry-sdk
