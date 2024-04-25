@@ -140,8 +140,8 @@ def create_app(
             level=config.api_config.logging.level.upper(),
             filter=lambda record: all(
                 [
-                    record["service"] == "uvicorn",
-                    record["endpoint"]
+                    record["extra"].get("service") == "uvicorn",
+                    record["extra"].get("endpoint")
                     not in config.api_config.logging.excluded_routers,
                 ]
             ),
