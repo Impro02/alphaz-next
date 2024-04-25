@@ -74,7 +74,7 @@ async def log_request_middleware(request: Request, call_next):
 
     response.headers[HeaderEnum.PROCESS_TIME.value] = str(process_time)
 
-    with uvicorn_logger.contextualize(endpoint=request.base_url):
+    with uvicorn_logger.contextualize(endpoint=request.url.path):
         uvicorn_logger.info(
             f'{host}:{port} - "{request.method} {url}" {response.status_code} {status_phrase} {formatted_process_time}ms'
         )
