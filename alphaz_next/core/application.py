@@ -173,11 +173,10 @@ def create_app(
         config.api_config.logging is not None
         and config.api_config.logging.rotation is not None
     ):
-        if uvicorn_formatter is None:
-            uvicorn_formatter = _logging.Formatter(
-                config.api_config.logging.uvicorn_format,
-                datefmt=config.api_config.logging.date_format,
-            )
+        uvicorn_formatter = _logging.Formatter(
+            config.api_config.logging.uvicorn_format,
+            datefmt=config.api_config.logging.date_format,
+        )
 
         directory_path = Path(config.api_config.directories.logs)
         directory_path.mkdir(parents=True, exist_ok=True)
