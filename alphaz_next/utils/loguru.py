@@ -1,10 +1,10 @@
 # MODULES
 import sys as _sys
-from typing import Optional as _Optional
+from typing import Dict, Optional as _Optional
 from loguru import logger as _logger
 from opentelemetry import trace as _trace
 
-_LOGGERS = {}
+_LOGGERS: Dict[str, "Logger"] = {}
 
 
 class Logger:
@@ -18,12 +18,16 @@ class Logger:
         colorize=True,
         format: _Optional[str] = None,
     ):
-        self._name = name
-        self._level = level
         self._is_new = True
         if name in _LOGGERS:
+            self._logger = _LOGGERS[name]
+            self._name = self._logger.name
+            self._level = self._logger.level
             self._is_new = False
-            return _LOGGERS[name]
+            return
+
+        self._name = name
+        self._level = level
 
         self._logger = _logger.bind(service=name)
 
@@ -36,6 +40,8 @@ class Logger:
                 filter=lambda record: record["extra"].get("service") == name,
                 enqueue=enqueue,
             )
+
+        _LOGGERS[name] = self._logger
 
     @property
     def name(self) -> str:
