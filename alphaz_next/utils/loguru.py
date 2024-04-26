@@ -20,9 +20,10 @@ class Logger:
     ):
         self._is_new = True
         if name in _LOGGERS:
-            self._logger = _LOGGERS[name]
-            self._name = self._logger.name
-            self._level = self._logger.level
+            saved_logger = _LOGGERS[name]
+            self._logger = saved_logger.sub_logger
+            self._name = saved_logger.name
+            self._level = saved_logger.level
             self._is_new = False
             return
 
@@ -41,7 +42,7 @@ class Logger:
                 enqueue=enqueue,
             )
 
-        _LOGGERS[name] = self._logger
+        _LOGGERS[name] = self
 
     @property
     def name(self) -> str:
