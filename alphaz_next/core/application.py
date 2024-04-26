@@ -154,7 +154,7 @@ def create_app(
 
     app.middleware("http")(_log_request_middleware)
 
-    telemetry_handler = setup_telemetry(config=config, app=app)
+    setup_telemetry(config=config, app=app)
 
     [app.include_router(router) for router in routers or []]
 

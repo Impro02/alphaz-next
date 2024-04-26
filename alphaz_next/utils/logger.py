@@ -10,9 +10,6 @@ from typing import (
     Optional as _Optional,
 )
 
-# CORE
-from alphaz_next.core._telemetry import HANDLER_TELEMETRY
-
 # UTILS
 from alphaz_next.utils.logging_filters import (
     LevelFilter as _LevelFilter,
@@ -40,6 +37,7 @@ class Logger:
         file_name: _Optional[str] = None,
         logging_formatter: str = DEFAULT_FORMAT,
         date_formatter: str = DEFAULT_DATE_FORMAT,
+        telemetry_handler: _Optional[_logging.Handler] = None,
     ):
         """
         Initializes a Logger object.
@@ -64,21 +62,18 @@ class Logger:
         directory_path = _Path(directory)
         directory_path.mkdir(parents=True, exist_ok=True)
 
-        logger_config = {
-            "level": level,
-            "directory_path": directory_path,
-            "when": when,
-            "interval": interval,
-            "backup_count": backup_count,
-            "logging_formatter": logging_formatter,
-            "date_formatter": date_formatter,
-        }
-
         self._logger = self._create_logger(
             name=name,
+            level=level,
+            directory_path=directory_path,
             file_name=file_name,
+            when=when,
+            interval=interval,
+            backup_count=backup_count,
+            logging_formatter=logging_formatter,
+            date_formatter=date_formatter,
             stream_output=stream_output,
-            **logger_config,
+            telemetry_handler=telemetry_handler,
         )
 
     def info(
@@ -202,6 +197,7 @@ class Logger:
         logging_formatter: str,
         date_formatter: str,
         stream_output: bool = False,
+        telemetry_handler: _Optional[_logging.Handler] = None,
     ) -> _logging.Logger:
         """
         Create and configure a logger with the specified parameters.
@@ -217,6 +213,7 @@ class Logger:
             logging_formatter (str): The logging formatter string.
             date_formatter (str): The date formatter string.
             stream_output (bool, optional): Whether to log messages to stdout as well. Defaults to False.
+            telemetry_handler (Optional[logging.Handler]): The telemetry handler to be added to the logger. Defaults to None.
 
         Returns:
             logging.Logger: The configured logger.
@@ -304,8 +301,8 @@ class Logger:
         logger.addHandler(error_time_rotating_handler)
         logger.addHandler(monitoring_time_rotating_handler)
 
-        if HANDLER_TELEMETRY is not None:
-            logger.addHandler(HANDLER_TELEMETRY)
+        if telemetry_handler is not None:
+            logger.addHandler(telemetry_handler)
 
         return logger
 

@@ -25,8 +25,6 @@ from alphaz_next.models.config.alpha_config import (
     AlphaConfigSchema as _AlphaConfigSchema,
 )
 
-HANDLER_TELEMETRY: _Optional[LoggingHandler] = None
-
 
 def _setup_traces(
     default_endpoint: str,
@@ -34,6 +32,16 @@ def _setup_traces(
     certificate_file: _Optional[str] = None,
     resource: _Optional[Resource] = None,
 ) -> None:
+    """
+    Set up traces for telemetry.
+
+    Args:
+        default_endpoint (str): The default endpoint for exporting traces.
+        default_headers (str, optional): The default headers for exporting traces. Defaults to None.
+        certificate_file (str, optional): The certificate file for exporting traces. Defaults to None.
+        resource (Resource, optional): The resource for exporting traces. Defaults to None.
+    """
+
     endpoint = _os.environ.get(
         "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
         f"{default_endpoint}/v1/traces",
@@ -65,6 +73,16 @@ def _setup_metrics(
     certificate_file: _Optional[str] = None,
     resource: _Optional[Resource] = None,
 ):
+    """
+    Set up metrics configuration for telemetry.
+
+    Args:
+        default_endpoint (str): The default endpoint for exporting metrics.
+        default_headers (str, optional): The default headers for exporting metrics. Defaults to None.
+        certificate_file (str, optional): The path to the certificate file. Defaults to None.
+        resource (Resource, optional): The resource associated with the metrics. Defaults to None.
+    """
+
     endpoint = _os.environ.get(
         "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
         f"{default_endpoint}/v1/metrics",
@@ -94,7 +112,18 @@ def _setup_logs(
     certificate_file: _Optional[str] = None,
     resource: _Optional[Resource] = None,
 ) -> LoggingHandler:
-    global HANDLER_TELEMETRY
+    """
+    Set up logs for telemetry.
+
+    Args:
+        default_endpoint (str): The default endpoint for exporting logs.
+        default_headers (str, optional): The default headers for exporting logs. Defaults to None.
+        certificate_file (str, optional): The path to the certificate file. Defaults to None.
+        resource (Resource, optional): The resource associated with the logs. Defaults to None.
+
+    Returns:
+        LoggingHandler: The logging handler for the telemetry logs.
+    """
 
     endpoint = _os.environ.get(
         "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
@@ -115,14 +144,10 @@ def _setup_logs(
     logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
     _logs.set_logger_provider(logger_provider)
 
-    HANDLER_TELEMETRY = LoggingHandler(
-        level=_logging.INFO, logger_provider=logger_provider
-    )
-
-    return HANDLER_TELEMETRY
+    return LoggingHandler(level=_logging.INFO, logger_provider=logger_provider)
 
 
-def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI) -> LoggingHandler:
+def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI):
     """
     Sets up OpenTelemetry for the application.
 
@@ -191,13 +216,13 @@ def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI) -> LoggingHandler
         resource=resource,
     )
 
-    handler = _setup_logs(
+    telemetry_handler = _setup_logs(
         default_endpoint=otel_exporter_otlp_endpoint,
         certificate_file=otel_exporter_otl_certificate,
         default_headers=otel_exporter_otlp_headers,
         resource=resource,
     )
 
-    FastAPIInstrumentor().instrument_app(app)
+    app.extra["telemetry_handler"] = telemetry_handler
 
-    return handler
+    FastAPIInstrumentor().instrument_app(app)
