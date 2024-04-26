@@ -18,7 +18,11 @@ class Logger:
         colorize=True,
         format: _Optional[str] = None,
     ):
+        self._name = name
+        self._level = level
+        self._is_new = True
         if name in _LOGGERS:
+            self._is_new = False
             return _LOGGERS[name]
 
         self._logger = _logger.bind(service=name)
@@ -32,6 +36,22 @@ class Logger:
                 filter=lambda record: record["extra"].get("service") == name,
                 enqueue=enqueue,
             )
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def level(self) -> str:
+        return self._level
+
+    @property
+    def is_new(self) -> bool:
+        return self._is_new
+
+    @property
+    def sub_logger(self):
+        return self._logger
 
     def _log(self, level: str, message: str):
         span = _trace.get_current_span()
