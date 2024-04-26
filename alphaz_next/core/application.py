@@ -189,7 +189,10 @@ def create_app(
         handler.setFormatter(uvicorn_formatter)
 
         uvicorn_logger.addHandler(handler)
-        uvicorn_logger.addHandler(telemetry_handler)
+
+        telemetry_handler = app.extra.get("telemetry_handler")
+        if telemetry_handler is not None:
+            uvicorn_logger.addHandler(telemetry_handler)
 
         uvicorn_logger.addFilter(
             _ExcludeRoutersFilter(
