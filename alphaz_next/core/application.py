@@ -48,7 +48,7 @@ from alphaz_next.core._middleware import (
     log_request_middleware as _log_request_middleware,
     CORSMiddleware as _CORSMiddleware,
 )
-from alphaz_next.core._telemetry import setup_telemetry, HANDLER_TELEMETRY
+from alphaz_next.core._telemetry import setup_telemetry
 
 # UTILS
 # UTILS
@@ -154,7 +154,7 @@ def create_app(
 
     app.middleware("http")(_log_request_middleware)
 
-    setup_telemetry(config=config, app=app)
+    telemetry_handler = setup_telemetry(config=config, app=app)
 
     [app.include_router(router) for router in routers or []]
 
@@ -189,7 +189,7 @@ def create_app(
         handler.setFormatter(uvicorn_formatter)
 
         uvicorn_logger.addHandler(handler)
-        uvicorn_logger.addHandler(HANDLER_TELEMETRY)
+        uvicorn_logger.addHandler(telemetry_handler)
 
         uvicorn_logger.addFilter(
             _ExcludeRoutersFilter(

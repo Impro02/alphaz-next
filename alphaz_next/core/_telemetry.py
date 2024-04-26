@@ -119,8 +119,10 @@ def _setup_logs(
         level=_logging.INFO, logger_provider=logger_provider
     )
 
+    return HANDLER_TELEMETRY
 
-def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI) -> None:
+
+def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI) -> LoggingHandler:
     """
     Sets up OpenTelemetry for the application.
 
@@ -189,7 +191,7 @@ def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI) -> None:
         resource=resource,
     )
 
-    _setup_logs(
+    handler = _setup_logs(
         default_endpoint=otel_exporter_otlp_endpoint,
         certificate_file=otel_exporter_otl_certificate,
         default_headers=otel_exporter_otlp_headers,
@@ -197,3 +199,5 @@ def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI) -> None:
     )
 
     FastAPIInstrumentor().instrument_app(app)
+
+    return handler
