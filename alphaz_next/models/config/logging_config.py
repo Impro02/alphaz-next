@@ -1,6 +1,7 @@
 # PYDANTIC
 from typing import Annotated as _Annotated, List as _List, Optional as _Optional
 from loguru import _defaults
+from opentelemetry.instrumentation.logging import LoggingInstrumentor
 
 # PYDANTIC
 from pydantic_core.core_schema import FieldValidationInfo as _FieldValidationInfo
@@ -30,6 +31,7 @@ class LoggingSchema(_BaseModel):
 
     Attributes:
         model_config (ConfigDict): Configuration dictionary for the model.
+        format (Optional[str]): Logging format.
         level (str): Logging level.
         rotation (Optional[str]): Log rotation.
         retention (Optional[int]): Log retention.
@@ -46,9 +48,18 @@ class LoggingSchema(_BaseModel):
             to_upper=True,
         ),
     ]
+    format: _Optional[str] = _Field(default=None)
     rotation: _Optional[str] = _Field(default=None)
     retention: _Optional[int] = _Field(default=None)
     excluded_routers: _List[str] = _Field(default_factory=lambda: [])
+
+    @_field_validator("format")
+    @classmethod
+    def validate_format(cls, value: str, info: _FieldValidationInfo):
+        if value is not None:
+            LoggingInstrumentor().instrument(logging_format=value)
+
+        return value
 
     @_field_validator("level")
     @classmethod
