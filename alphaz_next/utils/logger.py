@@ -10,6 +10,9 @@ from typing import (
     Optional as _Optional,
 )
 
+# CORE
+from alphaz_next.core._telemetry import HANDLER_TELEMETRY
+
 # UTILS
 from alphaz_next.utils.logging_filters import (
     LevelFilter as _LevelFilter,
@@ -300,6 +303,9 @@ class Logger:
         logger.addHandler(warning_time_rotating_handler)
         logger.addHandler(error_time_rotating_handler)
         logger.addHandler(monitoring_time_rotating_handler)
+
+        if HANDLER_TELEMETRY is not None:
+            logger.addHandler(HANDLER_TELEMETRY)
 
         return logger
 

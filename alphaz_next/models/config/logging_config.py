@@ -48,7 +48,9 @@ class LoggingSchema(_BaseModel):
             to_upper=True,
         ),
     ]
-    format: _Optional[str] = _Field(default=None)
+    format: str
+    uvicorn_format: str
+    date_format: str
     rotation: _Optional[str] = _Field(default=None)
     retention: _Optional[int] = _Field(default=None)
     excluded_routers: _List[str] = _Field(default_factory=lambda: [])

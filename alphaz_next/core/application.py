@@ -1,5 +1,6 @@
 # MODULES
-import os
+from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 import sys as _sys
 from typing import (
     Any as _Any,
@@ -10,8 +11,7 @@ from typing import (
     Sequence as _Sequence,
     Union as _Union,
 )
-import logging
-from loguru import logger
+import logging as _logging
 
 # FASTAPI
 from fastapi import (
@@ -38,17 +38,6 @@ from fastapi.responses import (
     RedirectResponse as _RedirectResponse,
 )
 
-# OPENTELEMETRY
-from opentelemetry import metrics, trace
-from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-
 # MODELS
 from alphaz_next.models.config.alpha_config import (
     AlphaConfigSchema as _AlphaConfigSchema,
@@ -59,16 +48,20 @@ from alphaz_next.core._middleware import (
     log_request_middleware as _log_request_middleware,
     CORSMiddleware as _CORSMiddleware,
 )
+from alphaz_next.core._telemetry import setup_telemetry, HANDLER_TELEMETRY
 
-
-# ELASTICAPM
+# UTILS
+# UTILS
+from alphaz_next.utils.logging_filters import (
+    ExcludeRoutersFilter as _ExcludeRoutersFilter,
+)
 
 _DEFAULT_FAVICON_URL = "https://fastapi.tiangolo.com/img/favicon.png"
 
-_uvicorn_access = logging.getLogger("uvicorn.access")
+_uvicorn_access = _logging.getLogger("uvicorn.access")
 _uvicorn_access.disabled = True
 
-uvicorn_logger = logger.bind(service="uvicorn")
+uvicorn_logger = _logging.getLogger("uvicorn")
 
 
 def _custom_openapi(
@@ -109,102 +102,6 @@ def _custom_openapi(
     return openapi_schema
 
 
-def _setup_opentelemetry(config: _AlphaConfigSchema, app: _FastAPI) -> None:
-    """
-    Sets up OpenTelemetry for the application.
-
-    Args:
-        config (_AlphaConfigSchema): The configuration object.
-        app (_FastAPI): The FastAPI application object.
-
-    Returns:
-        None
-    """
-
-    if config.api_config.apm is None or not config.api_config.apm.active:
-        return None
-
-    otel_service_name = config.project_name
-    apm_server_url = config.api_config.apm.server_url
-    certificate_path = config.api_config.apm.certificate_file
-    environment = config.environment.lower()
-    version = config.version
-
-    otel_exporter_otlp_headers = os.environ.get(
-        "OTEL_EXPORTER_OTLP_HEADERS",
-        None,
-    )
-
-    otel_exporter_otlp_endpoint = os.environ.get(
-        "OTEL_EXPORTER_OTLP_ENDPOINT",
-        apm_server_url,
-    )
-
-    otel_exporter_otl_certificate = os.environ.get(
-        "OTEL_EXPORTER_OTLP_CERTIFICATE",
-        certificate_path,
-    )
-
-    # Ressource
-    resource_attributes = (
-        os.environ.get("OTEL_RESOURCE_ATTRIBUTES")
-        or f"service.version={version},deployment.environment={environment}"
-    )
-    key_value_pairs = resource_attributes.split(",")
-    result_dict = {}
-
-    for pair in key_value_pairs:
-        key, value = pair.split("=")
-        result_dict[key] = value
-
-    resourceAttributes = {
-        "service.name": otel_service_name,
-        "service.version": result_dict["service.version"],
-        "deployment.environment": result_dict["deployment.environment"],
-    }
-
-    resource = Resource.create(resourceAttributes)
-
-    # Traces
-    otel_exported_otlp_traces_endpoint = os.environ.get(
-        "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
-        f"{otel_exporter_otlp_endpoint}/v1/traces",
-    )
-
-    exporter = OTLPSpanExporter(
-        endpoint=otel_exported_otlp_traces_endpoint,
-        certificate_file=otel_exporter_otl_certificate,
-        headers=otel_exporter_otlp_headers,
-    )
-
-    processor = BatchSpanProcessor(exporter)
-    traceProvider = TracerProvider(resource=resource)
-    traceProvider.add_span_processor(processor)
-    trace.set_tracer_provider(traceProvider)
-
-    provider = TracerProvider(resource=resource)
-    provider.add_span_processor(processor)
-
-    # Metrics
-    otel_exported_otlp_metrics_endpoint = os.environ.get(
-        "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
-        f"{otel_exporter_otlp_endpoint}/v1/metrics",
-    )
-    exporter = OTLPMetricExporter(
-        endpoint=otel_exported_otlp_metrics_endpoint,
-        certificate_file=otel_exporter_otl_certificate,
-        headers=otel_exporter_otlp_headers,
-    )
-    reader = PeriodicExportingMetricReader(exporter=exporter)
-    meterProvider = MeterProvider(
-        resource=resource,
-        metric_readers=[reader],
-    )
-    metrics.set_meter_provider(meterProvider)
-
-    FastAPIInstrumentor().instrument_app(app)
-
-
 def create_app(
     config: _AlphaConfigSchema,
     routes: _Optional[_BaseRoute] = None,
@@ -236,20 +133,6 @@ def create_app(
         FastAPI: The created FastAPI application.
     """
 
-    if config.api_config.logging is not None:
-        uvicorn_logger.add(
-            _sys.stderr,
-            level=config.api_config.logging.level.upper(),
-            filter=lambda record: all(
-                [
-                    record["extra"].get("service") == "uvicorn",
-                    record["extra"].get("endpoint")
-                    not in config.api_config.logging.excluded_routers,
-                ]
-            ),
-            colorize=True,
-        )
-
     # APP
     app = _FastAPI(
         routes=routes,
@@ -271,7 +154,7 @@ def create_app(
 
     app.middleware("http")(_log_request_middleware)
 
-    _setup_opentelemetry(config=config, app=app)
+    setup_telemetry(config=config, app=app)
 
     [app.include_router(router) for router in routers or []]
 
@@ -285,6 +168,35 @@ def create_app(
 
         if openapi_config.redoc_favicon_url:
             redoc_favicon_url = openapi_config.redoc_favicon_url
+
+    if (
+        config.api_config.logging is not None
+        and config.api_config.logging.rotation is not None
+    ):
+        if uvicorn_formatter is None:
+            uvicorn_formatter = _logging.Formatter(
+                config.api_config.logging.uvicorn_format,
+                datefmt=config.api_config.logging.date_format,
+            )
+
+        directory_path = Path(config.api_config.directories.logs)
+        directory_path.mkdir(parents=True, exist_ok=True)
+
+        handler = TimedRotatingFileHandler(
+            filename=directory_path / "uvicorn.log",
+            when=config.api_config.logging.rotation,
+            backupCount=config.api_config.logging.retention,
+        )
+        handler.setFormatter(uvicorn_formatter)
+
+        uvicorn_logger.addHandler(handler)
+        uvicorn_logger.addHandler(HANDLER_TELEMETRY)
+
+        uvicorn_logger.addFilter(
+            _ExcludeRoutersFilter(
+                router_names=config.api_config.logging.excluded_routers
+            )
+        )
 
     @app.exception_handler(_RequestValidationError)
     async def request_validation_exception_handler(
@@ -302,8 +214,7 @@ def create_app(
             "query_params": query_params,
         }
 
-        with uvicorn_logger.contextualize(endpoint=request.base_url):
-            uvicorn_logger.info(detail)
+        uvicorn_logger.info(detail)
         return await _request_validation_exception_handler(request, exc)
 
     @app.exception_handler(_HTTPException)
@@ -334,10 +245,9 @@ def create_app(
         exception_type, exception_value, exception_traceback = _sys.exc_info()
         exception_name = getattr(exception_type, "__name__", None)
 
-        with uvicorn_logger.contextualize(endpoint=request.base_url):
-            uvicorn_logger.error(
-                f'{host}:{port} - "{request.method} {url}" 500 Internal Server Error <{exception_name}: {exception_value}>'
-            )
+        uvicorn_logger.error(
+            f'{host}:{port} - "{request.method} {url}" 500 Internal Server Error <{exception_name}: {exception_value}>'
+        )
         return _PlainTextResponse(str(exc), status_code=500)
 
     @app.get("/status", include_in_schema=False)
