@@ -22,6 +22,13 @@ from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.resources import (
+    Resource,
+    SERVICE_NAME,
+    SERVICE_VERSION,
+    DEPLOYMENT_ENVIRONMENT,
+    SERVICE_INSTANCE_ID,
+)
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -198,6 +205,7 @@ def _setup_traces(
 
 
 def _setup_metrics(
+    export_interval_millis: int,
     default_endpoint: str,
     default_headers: _Optional[str] = None,
     certificate_file: _Optional[str] = None,
@@ -230,7 +238,10 @@ def _setup_metrics(
         certificate_file=certificate_file,
         headers=headers,
     )
-    reader = PeriodicExportingMetricReader(exporter=exporter)
+    reader = PeriodicExportingMetricReader(
+        exporter=exporter,
+        export_interval_millis=export_interval_millis,
+    )
     provider = MeterProvider(
         resource=resource,
         metric_readers=[reader],
@@ -329,10 +340,10 @@ def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI):
         result_dict[key] = value
 
     resourceAttributes = {
-        "service.name": otel_service_name,
-        "service.node.name": _platform.node(),
-        "service.version": result_dict["service.version"],
-        "deployment.environment": result_dict["deployment.environment"],
+        SERVICE_NAME: otel_service_name,
+        SERVICE_INSTANCE_ID: _platform.node(),
+        SERVICE_VERSION: result_dict["service.version"],
+        DEPLOYMENT_ENVIRONMENT: result_dict["deployment.environment"],
     }
 
     resource = Resource.create(resourceAttributes)
@@ -345,6 +356,7 @@ def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI):
     )
 
     _setup_metrics(
+        export_interval_millis=config.api_config.apm.metrics_export_interval_millis,
         default_endpoint=otel_exporter_otlp_endpoint,
         certificate_file=otel_exporter_otl_certificate,
         default_headers=otel_exporter_otlp_headers,

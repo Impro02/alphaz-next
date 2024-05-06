@@ -19,6 +19,6 @@ class ApmConfig(_BaseModel):
     server_url: str
     certificate_file: _Optional[str] = _Field(default=None)
     ssl_verify: bool = _Field(default=True)
-    debug: bool = _Field(default=True)
     active: bool = _Field(default=False)
+    metrics_export_interval_millis: int = _Field(default=30000)
     configuration: _Optional[_Dict[str, _Optional[_List[str]]]] = _Field(default=None)
