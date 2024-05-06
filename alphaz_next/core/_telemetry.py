@@ -1,7 +1,13 @@
 # MODULES
 import os as _os
 import logging as _logging
-from typing import Optional as _Optional
+import platform as _platform
+import psutil as _psutil
+from typing import (
+    Dict as _Dict,
+    Optional as _Optional,
+    List as _List,
+)
 
 # FASTAPI
 from fastapi import FastAPI as _FastAPI
@@ -19,11 +25,135 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.system_metrics import (
+    SystemMetricsInstrumentor as _SystemMetricsInstrumentor,
+)
+from opentelemetry.metrics import (
+    CallbackOptions,
+    Observation,
+)
 
 # MODELS
 from alphaz_next.models.config.alpha_config import (
     AlphaConfigSchema as _AlphaConfigSchema,
 )
+
+
+class SystemMetricsInstrumentor(_SystemMetricsInstrumentor):
+
+    def __init__(
+        self,
+        labels: _Dict[str, str] | None = None,
+        config: _Dict[str, _List[str]] | None = None,
+    ):
+        super().__init__(labels, config)
+
+        self._system_cpu_total_norm_pct_labels = self._labels.copy()
+
+    def _get_system_cpu_total_norm_pct(self, options: CallbackOptions):
+        cpu_norm_percent = _psutil.cpu_percent(interval=None) / 100.0
+        yield Observation(
+            cpu_norm_percent,
+            self._system_cpu_total_norm_pct_labels,
+        )
+
+    def _get_system_memory_actual_free(self, options: CallbackOptions):
+        memory = _psutil.virtual_memory()
+        yield Observation(
+            memory.available,
+            self._system_cpu_total_norm_pct_labels,
+        )
+
+    def _get_system_memory_total(self, options: CallbackOptions):
+        memory = _psutil.virtual_memory()
+        yield Observation(
+            memory.total,
+            self._system_cpu_total_norm_pct_labels,
+        )
+
+    def _get_system_process_cpu_total_norm_pct(self, options: CallbackOptions):
+        p = _psutil.Process()
+        if hasattr(p, "oneshot"):  # new in psutil 5.0
+            with p.oneshot():
+                cpu_percent = p.cpu_percent(interval=None)
+        else:
+            cpu_percent = p.cpu_percent(interval=None)
+
+        yield Observation(
+            cpu_percent / 100.0 / _psutil.cpu_count(),
+            self._system_cpu_total_norm_pct_labels,
+        )
+
+    def _get_system_process_memory_size(self, options: CallbackOptions):
+        p = _psutil.Process()
+        if hasattr(p, "oneshot"):  # new in psutil 5.0
+            with p.oneshot():
+                memory_info = p.memory_info()
+        else:
+            memory_info = p.memory_info()
+
+        yield Observation(
+            memory_info.vms,
+            self._system_cpu_total_norm_pct_labels,
+        )
+
+    def _get_system_process_memory_rss_byte(self, options: CallbackOptions):
+        p = _psutil.Process()
+        if hasattr(p, "oneshot"):  # new in psutil 5.0
+            with p.oneshot():
+                memory_info = p.memory_info()
+        else:
+            memory_info = p.memory_info()
+
+        yield Observation(
+            memory_info.rss,
+            self._system_cpu_total_norm_pct_labels,
+        )
+
+    def _instrument(self, **kwargs):
+        super()._instrument(**kwargs)
+
+        if "system.cpu.total.norm.pct" in self._config:
+            self._meter.create_observable_gauge(
+                name="system.cpu.total.norm.pct",
+                callbacks=[self._get_system_cpu_total_norm_pct],
+                description="System CPU total normalized percent",
+            )
+
+        if "system.memory.actual.free" in self._config:
+            self._meter.create_observable_gauge(
+                name="system.memory.actual.free",
+                callbacks=[self._get_system_memory_actual_free],
+                description="System memory actual free",
+            )
+
+        if "system.memory.total" in self._config:
+            self._meter.create_observable_gauge(
+                name="system.memory.total",
+                callbacks=[self._get_system_memory_total],
+                description="System memory total",
+            )
+
+        if "system.process.cpu.total.norm.pct" in self._config:
+            self._meter.create_observable_gauge(
+                name="system.process.cpu.total.norm.pct",
+                callbacks=[self._get_system_process_cpu_total_norm_pct],
+                description="System process CPU total normalized percent",
+            )
+
+        if "system.process.memory.size" in self._config:
+            self._meter.create_observable_gauge(
+                name="system.process.memory.size",
+                callbacks=[self._get_system_process_memory_size],
+                description="System process memory size",
+            )
+
+        if "system.process.memory.rss.byte" in self._config:
+            self._meter.create_observable_gauge(
+                name="system.process.memory.rss.bytes",
+                callbacks=[self._get_system_process_memory_rss_byte],
+                description="System process memory rss bytes",
+            )
 
 
 def _setup_traces(
@@ -72,6 +202,7 @@ def _setup_metrics(
     default_headers: _Optional[str] = None,
     certificate_file: _Optional[str] = None,
     resource: _Optional[Resource] = None,
+    configuration: _Optional[_Dict[str, _Optional[_List[str]]]] = None,
 ):
     """
     Set up metrics configuration for telemetry.
@@ -81,6 +212,7 @@ def _setup_metrics(
         default_headers (str, optional): The default headers for exporting metrics. Defaults to None.
         certificate_file (str, optional): The path to the certificate file. Defaults to None.
         resource (Resource, optional): The resource associated with the metrics. Defaults to None.
+        configuration (Dict[str, List[str]], optional): The configuration for the metrics. Defaults to None.
     """
 
     endpoint = _os.environ.get(
@@ -104,6 +236,8 @@ def _setup_metrics(
         metric_readers=[reader],
     )
     metrics.set_meter_provider(provider)
+
+    SystemMetricsInstrumentor(config=configuration).instrument()
 
 
 def _setup_logs(
@@ -196,6 +330,7 @@ def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI):
 
     resourceAttributes = {
         "service.name": otel_service_name,
+        "service.node.name": _platform.node(),
         "service.version": result_dict["service.version"],
         "deployment.environment": result_dict["deployment.environment"],
     }
@@ -214,6 +349,7 @@ def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI):
         certificate_file=otel_exporter_otl_certificate,
         default_headers=otel_exporter_otlp_headers,
         resource=resource,
+        configuration=config.api_config.apm.configuration,
     )
 
     telemetry_handler = _setup_logs(

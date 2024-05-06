@@ -15,5 +15,6 @@ opentelemetry-api
 opentelemetry-exporter-otlp-proto-http
 opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-sqlalchemy
+opentelemetry-instrumentation-system-metrics
 opentelemetry-instrumentation-logging
 opentelemetry-sdk
