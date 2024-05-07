@@ -55,67 +55,15 @@ class SystemMetricsInstrumentor(_SystemMetricsInstrumentor):
     ):
         super().__init__(labels, config)
 
+        self._process = _psutil.Process()
+        self._process.cpu_percent(interval=None)
+
         self._system_cpu_total_norm_pct_labels = self._labels.copy()
-
-    def _get_system_cpu_total_norm_pct(self, options: CallbackOptions):
-        cpu_norm_percent = _psutil.cpu_percent(interval=None) / 100.0
-        yield Observation(
-            cpu_norm_percent,
-            self._system_cpu_total_norm_pct_labels,
-        )
-
-    def _get_system_memory_actual_free(self, options: CallbackOptions):
-        memory = _psutil.virtual_memory()
-        yield Observation(
-            memory.available,
-            self._system_cpu_total_norm_pct_labels,
-        )
-
-    def _get_system_memory_total(self, options: CallbackOptions):
-        memory = _psutil.virtual_memory()
-        yield Observation(
-            memory.total,
-            self._system_cpu_total_norm_pct_labels,
-        )
-
-    def _get_system_process_cpu_total_norm_pct(self, options: CallbackOptions):
-        p = _psutil.Process()
-        if hasattr(p, "oneshot"):  # new in psutil 5.0
-            with p.oneshot():
-                cpu_percent = p.cpu_percent(interval=None)
-        else:
-            cpu_percent = p.cpu_percent(interval=None)
-
-        yield Observation(
-            cpu_percent / 100.0 / _psutil.cpu_count(),
-            self._system_cpu_total_norm_pct_labels,
-        )
-
-    def _get_system_process_memory_size(self, options: CallbackOptions):
-        p = _psutil.Process()
-        if hasattr(p, "oneshot"):  # new in psutil 5.0
-            with p.oneshot():
-                memory_info = p.memory_info()
-        else:
-            memory_info = p.memory_info()
-
-        yield Observation(
-            memory_info.vms,
-            self._system_cpu_total_norm_pct_labels,
-        )
-
-    def _get_system_process_memory_rss_byte(self, options: CallbackOptions):
-        p = _psutil.Process()
-        if hasattr(p, "oneshot"):  # new in psutil 5.0
-            with p.oneshot():
-                memory_info = p.memory_info()
-        else:
-            memory_info = p.memory_info()
-
-        yield Observation(
-            memory_info.rss,
-            self._system_cpu_total_norm_pct_labels,
-        )
+        self._system_memory_actual_free_labels = self._labels.copy()
+        self._system_memory_total_labels = self._labels.copy()
+        self._system_process_cpu_total_norm_pct_labels = self._labels.copy()
+        self._system_process_memory_size_labels = self._labels.copy()
+        self._system_process_memory_rss_byte_labels = self._labels.copy()
 
     def _instrument(self, **kwargs):
         super()._instrument(**kwargs)
@@ -161,6 +109,59 @@ class SystemMetricsInstrumentor(_SystemMetricsInstrumentor):
                 callbacks=[self._get_system_process_memory_rss_byte],
                 description="System process memory rss bytes",
             )
+
+    def _get_process_infos(self, p: _psutil.Process):
+        if hasattr(p, "oneshot"):  # new in psutil 5.0
+            with p.oneshot():
+                cpu_percent = p.cpu_percent(interval=None)
+                memory_info = p.memory_info()
+        else:
+            cpu_percent = p.cpu_percent(interval=None)
+            memory_info = p.memory_info()
+
+        return cpu_percent, memory_info
+
+    def _get_system_cpu_total_norm_pct(self, options: CallbackOptions):
+        cpu_norm_percent = _psutil.cpu_percent(interval=None) / 100.0
+        yield Observation(
+            cpu_norm_percent,
+            self._system_cpu_total_norm_pct_labels,
+        )
+
+    def _get_system_memory_actual_free(self, options: CallbackOptions):
+        memory = _psutil.virtual_memory()
+        yield Observation(
+            memory.available,
+            self._system_memory_actual_free_labels,
+        )
+
+    def _get_system_memory_total(self, options: CallbackOptions):
+        memory = _psutil.virtual_memory()
+        yield Observation(
+            memory.total,
+            self._system_memory_total_labels,
+        )
+
+    def _get_system_process_cpu_total_norm_pct(self, options: CallbackOptions):
+        cpu_percent, _ = self._get_process_infos(p=self._process)
+        yield Observation(
+            cpu_percent / 100.0 / _psutil.cpu_count(),
+            self._system_process_cpu_total_norm_pct_labels,
+        )
+
+    def _get_system_process_memory_size(self, options: CallbackOptions):
+        _, memory_info = self._get_process_infos(p=self._process)
+        yield Observation(
+            memory_info.vms,
+            self._system_process_memory_size_labels,
+        )
+
+    def _get_system_process_memory_rss_byte(self, options: CallbackOptions):
+        _, memory_info = self._get_process_infos(p=self._process)
+        yield Observation(
+            memory_info.rss,
+            self._system_process_memory_rss_byte_labels,
+        )
 
 
 def _setup_traces(
