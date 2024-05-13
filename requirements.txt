@@ -9,7 +9,7 @@ pytz
 email-validator
 deepdiff
 unidecode
-pysql-repo>=0.6.2
+pysql-repo>=0.6.3
 loguru
 opentelemetry-api
 opentelemetry-exporter-otlp-proto-http
