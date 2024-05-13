@@ -5,19 +5,19 @@ from typing import Dict, List, Optional, TypedDict, Union
 from alphaz_next.core.constants import HeaderEnum
 
 
-class ExtHeaders(TypedDict):
+class ExtHeaders(TypedDict, total=False):
     """
     Represents the extended headers for a response.
 
     Attributes:
-        pagination (Optional[str]): The pagination information.
-        status_description (Optional[Union[str, List[str]]]): The status description.
-        warning (Optional[bool]): Indicates if there is a warning.
+        pagination (str): The pagination information.
+        status_description (Union[str, List[str]]): The status description.
+        warning (bool): Indicates if there is a warning.
     """
 
-    pagination: Optional[str]
-    status_description: Optional[Union[str, List[str]]]
-    warning: Optional[bool]
+    pagination: str
+    status_description: Union[str, List[str]]
+    warning: bool
 
 
 from typing import Dict, Optional
