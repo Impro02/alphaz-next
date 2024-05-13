@@ -104,7 +104,7 @@ def _custom_openapi(
 
 def create_app(
     config: _AlphaConfigSchema,
-    routes: _Optional[_BaseRoute] = None,
+    routes: _Optional[_List[_BaseRoute]] = None,
     routers: _Optional[_List[_APIRouter]] = None,
     lifespan: _Optional[_AsyncContextManager] = None,
     allow_origins: _Sequence[str] = (),
@@ -119,8 +119,8 @@ def create_app(
 
     Args:
         config (AlphaConfigSchema): The configuration for the application.
-        routes (Optional[BaseRoute]): The list of routes to include in the application. Defaults to None.
-        routers (List[APIRouter]): The list of API routers to include in the application.
+        routes (Optional[List[BaseRoute]]): The list of routes to include in the application. Defaults to None.
+        routers (Optional[List[APIRouter]]): The list of API routers to include in the application.
         container (Optional[containers.DeclarativeContainer]): The dependency injection container. Defaults to None.
         allow_origins (Sequence[str]): The list of allowed origins for CORS. Defaults to ().
         allow_methods (Sequence[str]): The list of allowed HTTP methods for CORS. Defaults to ("GET",).
