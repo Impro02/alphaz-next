@@ -5,7 +5,10 @@ from typing import Any, Dict
 from fastapi.exceptions import HTTPException as _HTTPException
 
 # CORE
-from alphaz_next.core._base import extend_headers, ExtHeaders
+from alphaz_next.core._base import (
+    extend_headers as _extend_headers,
+    ExtHeaders as _ExtHeaders,
+)
 
 
 class InvalidCredentialsError(Exception):
@@ -27,12 +30,13 @@ class NotEnoughPermissionsError(Exception):
 
 
 class HTTPException(_HTTPException):
+
     def __init__(
         self,
         status_code: int,
         detail: Any = None,
         headers: Dict[str, str] | None = None,
-        ext_headers: ExtHeaders | None = None,
+        ext_headers: _ExtHeaders | None = None,
     ) -> None:
         """
         Initialize a new HTTPException.
@@ -43,7 +47,7 @@ class HTTPException(_HTTPException):
             headers (Dict[str, str] | None, optional): Additional headers to include in the response. Defaults to None.
             ext_headers (ExtHeaders | None, optional): Extended headers to include in the response. Defaults to None.
         """
-        headers = extend_headers(
+        headers = _extend_headers(
             headers=headers,
             ext_headers=ext_headers,
         )
