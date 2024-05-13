@@ -6,4 +6,5 @@ from pysql_repo import (
     LoadingTechnique as LoadingTechnique,
     Operators as Operators,
     RelationshipOption as RelationshipOption,
+    FilterType as FilterType,
 )
