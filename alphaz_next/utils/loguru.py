@@ -1,12 +1,12 @@
 # MODULES
 import sys as _sys
-from typing import Dict, Optional as _Optional, cast as _cast
+from typing import Dict as _Dict, Optional as _Optional, cast as _cast
 from loguru import logger as _logger, Logger as _Logger, _defaults
 
 # OPENTELEMETRY
 from opentelemetry import trace as _trace
 
-_LOGGERS: Dict[str, "Logger"] = {}
+_LOGGERS: _Dict[str, "Logger"] = {}
 
 
 class Logger:

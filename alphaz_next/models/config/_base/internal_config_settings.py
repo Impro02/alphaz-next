@@ -1,11 +1,9 @@
-from typing import Protocol as _Protocol
-
 # PYDANTIC
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
-class AlphaInternalConfigProtocol(_Protocol):
+class AlphaInternalConfigSettingsSchema:
     token_url: str
     user_me_url: str
     api_key_me_url: str
@@ -19,7 +17,7 @@ def create_internal_config(
     api_key_me_url_alias: str = "ALPHA_API_KEY_ME_URL",
     secret_key_alias: str = "ALPHA_SECRET_KEY",
     algorithm_alias: str = "ALPHA_ALGORITHM",
-) -> AlphaInternalConfigProtocol:
+) -> AlphaInternalConfigSettingsSchema:
     """
     Create an instance of the AlphaInternalConfigSettingsSchema class with the provided configuration settings.
 
@@ -34,7 +32,10 @@ def create_internal_config(
         AlphaInternalConfigSettingsSchema: An instance of the AlphaInternalConfigSettingsSchema class.
     """
 
-    class AlphaInternalConfigSettingsSchema(BaseSettings, AlphaInternalConfigProtocol):
+    class _AlphaInternalConfigSettingsSchema(
+        BaseSettings,
+        AlphaInternalConfigSettingsSchema,
+    ):
         token_url: str = Field(
             default="/auth",
             validation_alias=token_url_alias,
@@ -56,4 +57,4 @@ def create_internal_config(
             validation_alias=algorithm_alias,
         )
 
-    return AlphaInternalConfigSettingsSchema()
+    return _AlphaInternalConfigSettingsSchema()

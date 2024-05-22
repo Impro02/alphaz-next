@@ -17,12 +17,12 @@ from pydantic import BaseModel as _BaseModel
 
 # SQLALCHEMY
 from sqlalchemy.orm import (
-    DeclarativeBase,
+    DeclarativeBase as _DeclarativeBase,
     InstrumentedAttribute as _InstrumentedAttribute,
     RelationshipProperty as _RelationshipProperty,
 )
 
-_T = _TypeVar("_T", bound=DeclarativeBase)
+_T = _TypeVar("_T", bound=_DeclarativeBase)
 
 
 def uppercase(

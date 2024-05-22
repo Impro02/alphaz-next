@@ -1,7 +1,7 @@
 # MODULES
 from enum import Enum as _Enum
 import json as _json
-import os
+import os as _os
 import re as _re
 from pathlib import Path as _Path
 from typing import (
@@ -39,7 +39,6 @@ from pydantic import BaseModel as _BaseModel, Field as _Field
 # HTTPX
 from httpx import Response as _Response
 from httpx._types import (
-    HeaderTypes as _HeaderTypes,
     QueryParamTypes as _QueryParamTypes,
 )
 from alphaz_next.core.constants import HeaderEnum as _HeaderEnum
@@ -48,8 +47,6 @@ from alphaz_next.core.constants import HeaderEnum as _HeaderEnum
 from alphaz_next.libs.file_lib import (
     save_file as _save_file,
     save_json_file as _save_json_file,
-    open_json_file as _open_json_file,
-    open_file as _open_file,
 )
 
 
@@ -725,7 +722,7 @@ def load_expected_data(
             )
 
             expected_data: _Union[_List[_Dict[str, _Any]], _Dict[str, _Any], bytes] = {}
-            if os.path.exists(file_path):
+            if _os.path.exists(file_path):
                 with open(file_path, encoding=encoding) as file:
                     match format:
                         case "json":

@@ -1,6 +1,12 @@
 # MODULES
 from pathlib import Path as _Path
-from typing import Any, Dict, Type as _Type, TypeVar as _TypeVar, cast
+from typing import (
+    Any as _Any,
+    Dict as _Dict,
+    Type as _Type,
+    TypeVar as _TypeVar,
+    cast as _cast,
+)
 
 # PYDANTIC
 from pydantic import Field as _Field, computed_field as _computed_field
@@ -47,7 +53,7 @@ def create_config_settings(
         @_computed_field  # type: ignore
         @property
         def main_config(self) -> _T:
-            data = cast(Dict[str, Any], _open_json_file(path=_Path(path)))
+            data = _cast(_Dict[str, _Any], _open_json_file(path=_Path(path)))
 
             data_ext = {
                 "environment": self.environment,

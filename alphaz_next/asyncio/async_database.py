@@ -12,11 +12,13 @@ from pysql_repo._database_base import (
 )
 
 # SQLALCHEMY
-from sqlalchemy import MetaData
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import MetaData as _MetaData
+from sqlalchemy.orm import DeclarativeBase as _DeclarativeBase
 
 # OPENTELEMETRY
-from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import (
+    SQLAlchemyInstrumentor as _SQLAlchemyInstrumentor,
+)
 
 
 class AsyncDataBase(_AsyncDataBase):
@@ -24,8 +26,8 @@ class AsyncDataBase(_AsyncDataBase):
     def __init__(
         self,
         databases_config: _DataBaseConfigTypedDict,
-        base: _Type[DeclarativeBase],
-        metadata_views: _Optional[_List[MetaData]] = None,
+        base: _Type[_DeclarativeBase],
+        metadata_views: _Optional[_List[_MetaData]] = None,
         autoflush: bool = False,
         expire_on_commit: bool = False,
         echo: bool = False,
@@ -39,4 +41,4 @@ class AsyncDataBase(_AsyncDataBase):
             echo=echo,
         )
 
-        SQLAlchemyInstrumentor().instrument(engine=self._engine.sync_engine)
+        _SQLAlchemyInstrumentor().instrument(engine=self._engine.sync_engine)

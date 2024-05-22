@@ -1,8 +1,8 @@
 # PYDANTIC
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel as _BaseModel, ConfigDict as _ConfigDict
 
 
-class DirectoriesSchema(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class DirectoriesSchema(_BaseModel):
+    model_config = _ConfigDict(from_attributes=True)
 
     logs: str

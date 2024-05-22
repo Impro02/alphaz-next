@@ -3,7 +3,9 @@ import logging as _logging
 from typing import Annotated as _Annotated, List as _List, Optional as _Optional
 
 # OPENTELEMETRY
-from opentelemetry.instrumentation.logging import LoggingInstrumentor
+from opentelemetry.instrumentation.logging import (
+    LoggingInstrumentor as _LoggingInstrumentor,
+)
 
 # PYDANTIC
 from pydantic_core.core_schema import FieldValidationInfo as _FieldValidationInfo
@@ -59,7 +61,7 @@ class LoggingSchema(_BaseModel):
     @classmethod
     def validate_format(cls, value: str, info: _FieldValidationInfo) -> str:
         if value is not None:
-            LoggingInstrumentor().instrument(logging_format=value)
+            _LoggingInstrumentor().instrument(logging_format=value)
 
         return value
 

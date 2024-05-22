@@ -1,9 +1,9 @@
 # MODULES
-from logging.handlers import TimedRotatingFileHandler
-from pathlib import Path
+import logging as _logging
+from logging.handlers import TimedRotatingFileHandler as _TimedRotatingFileHandler
+from pathlib import Path as _Path
 import sys as _sys
 from typing import (
-    Annotated,
     Any as _Any,
     Dict as _Dict,
     List as _List,
@@ -11,7 +11,6 @@ from typing import (
     Sequence as _Sequence,
     Union as _Union,
 )
-import logging as _logging
 
 # FASTAPI
 from fastapi import (
@@ -185,10 +184,10 @@ def create_app(
             datefmt=config.api_config.logging.date_format,
         )
 
-        directory_path = Path(config.api_config.directories.logs)
+        directory_path = _Path(config.api_config.directories.logs)
         directory_path.mkdir(parents=True, exist_ok=True)
 
-        handler = TimedRotatingFileHandler(
+        handler = _TimedRotatingFileHandler(
             filename=directory_path / "uvicorn.log",
             when=config.api_config.logging.rotation,
             backupCount=config.api_config.logging.retention,

@@ -1,20 +1,20 @@
 # MODULES
-from typing import Dict, List, Optional
+from typing import Dict as _Dict, List as _List, Optional as _Optional
 
 # PYDANTIC
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel as _BaseModel, ConfigDict as _ConfigDict, Field as _Field
 
 
-class ContactSchema(BaseModel):
-    name: Optional[str] = Field(default=None)
-    email: Optional[str] = Field(default=None)
+class ContactSchema(_BaseModel):
+    name: _Optional[str] = _Field(default=None)
+    email: _Optional[str] = _Field(default=None)
 
 
-class OpenApiSchema(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class OpenApiSchema(_BaseModel):
+    model_config = _ConfigDict(from_attributes=True)
 
-    description: Optional[str] = Field(default=None)
-    contact: Optional[ContactSchema] = Field(default=None)
-    swagger_favicon_url: Optional[str] = Field(default=None)
-    redoc_favicon_url: Optional[str] = Field(default=None)
-    tags: List[Dict[str, str]] = Field(default_factory=lambda: [])
+    description: _Optional[str] = _Field(default=None)
+    contact: _Optional[ContactSchema] = _Field(default=None)
+    swagger_favicon_url: _Optional[str] = _Field(default=None)
+    redoc_favicon_url: _Optional[str] = _Field(default=None)
+    tags: _List[_Dict[str, str]] = _Field(default_factory=lambda: [])

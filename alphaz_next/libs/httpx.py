@@ -1,9 +1,8 @@
 # MODULES
-import asyncio
-import time
+import asyncio as _asyncio
+import time as _time
 from typing import (
     Any as _Any,
-    Dict as _Dict,
     List as _List,
     Literal as _Literal,
     Optional as _Optional,
@@ -13,13 +12,13 @@ from typing import (
 )
 
 # FASTAPI
-from fastapi import HTTPException
+from fastapi import HTTPException as _HTTPException
 
 # PYDANTIC
-from pydantic import BaseModel
+from pydantic import BaseModel as _BaseModel
 
 # HTTPX
-import httpx
+import httpx as _httpx
 
 
 def make_request_with_retry(
@@ -29,7 +28,7 @@ def make_request_with_retry(
     retry_on_status: _Optional[_List[int]] = None,
     timeout: _Optional[float] = None,
     **kwargs: _Any,
-) -> httpx.Response:
+) -> _httpx.Response:
     """
     Makes an HTTP request with retries in case of a timeout error.
 
@@ -57,22 +56,22 @@ def make_request_with_retry(
 
     for retry_count in range(max_retries + 1):
         try:
-            with httpx.Client(timeout=timeout) as client:
-                response: httpx.Response = getattr(client, method.lower())(
+            with _httpx.Client(timeout=timeout) as client:
+                response: _httpx.Response = getattr(client, method.lower())(
                     url, **kwargs
                 )
-        except httpx.ReadTimeout as ex:
+        except _httpx.ReadTimeout as ex:
             if retry_count == max_retries:
                 raise RuntimeError(
                     f"Unable to contact server after {retry_count} retries {item_repr}"
                 )
 
             wait_time = 2**retry_count
-            time.sleep(wait_time)
-        except httpx.HTTPStatusError as ex:
+            _time.sleep(wait_time)
+        except _httpx.HTTPStatusError as ex:
             if ex.response.status_code in retry_statuses and retry_count < max_retries:
                 wait_time = 2**retry_count
-                time.sleep(wait_time)
+                _time.sleep(wait_time)
             else:
                 raise ex
         except Exception as ex:
@@ -92,7 +91,7 @@ async def make_async_request_with_retry(
     retry_on_status: _Optional[_List[int]] = None,
     timeout: _Optional[float] = None,
     **kwargs: _Any,
-) -> httpx.Response:
+) -> _httpx.Response:
     """
     Makes an HTTP request with retries in case of a timeout error.
 
@@ -120,22 +119,22 @@ async def make_async_request_with_retry(
 
     for retry_count in range(max_retries + 1):
         try:
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                response: httpx.Response = await getattr(client, method.lower())(
+            async with _httpx.AsyncClient(timeout=timeout) as client:
+                response: _httpx.Response = await getattr(client, method.lower())(
                     url, **kwargs
                 )
-        except httpx.ReadTimeout as ex:
+        except _httpx.ReadTimeout as ex:
             if retry_count == max_retries:
                 raise RuntimeError(
                     f"Unable to contact server after {retry_count} retries {item_repr}"
                 )
 
             wait_time = 2**retry_count
-            await asyncio.sleep(wait_time)
-        except httpx.HTTPStatusError as ex:
+            await _asyncio.sleep(wait_time)
+        except _httpx.HTTPStatusError as ex:
             if ex.response.status_code in retry_statuses and retry_count < max_retries:
                 wait_time = 2**retry_count
-                await asyncio.sleep(wait_time)
+                await _asyncio.sleep(wait_time)
             else:
                 raise ex
         except Exception as ex:
@@ -148,11 +147,11 @@ async def make_async_request_with_retry(
     raise RuntimeError(f"Maximum number of retries exceeded {item_repr}")
 
 
-_T = _TypeVar("_T", bound=BaseModel)
+_T = _TypeVar("_T", bound=_BaseModel)
 
 
 def post_process_http_response(
-    response: httpx.Response,
+    response: _httpx.Response,
     schema: _Optional[_Type[_T]] = None,
     mode_alpha: bool = False,
 ) -> _Union[_T, _List[_T], _Any]:
@@ -171,7 +170,7 @@ def post_process_http_response(
         HTTPException: If the response is not a success.
     """
     if not response.is_success:
-        raise HTTPException(
+        raise _HTTPException(
             status_code=response.status_code,
             detail=response.text,
             headers={k: v for k, v in response.headers.items()},
