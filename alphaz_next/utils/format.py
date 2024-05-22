@@ -5,6 +5,7 @@ from typing import (
     Dict as _Dict,
     List as _List,
     Optional as _Optional,
+    Set as _Set,
     Tuple as _Tuple,
     Type as _Type,
     TypeVar as _TypeVar,
@@ -16,15 +17,17 @@ from pydantic import BaseModel as _BaseModel
 
 # SQLALCHEMY
 from sqlalchemy.orm import (
+    DeclarativeBase,
     InstrumentedAttribute as _InstrumentedAttribute,
     RelationshipProperty as _RelationshipProperty,
-    declarative_base as _declarative_base,
 )
 
-_T = _TypeVar("_T", bound=_declarative_base())
+_T = _TypeVar("_T", bound=DeclarativeBase)
 
 
-def uppercase(items: _List[str] | str) -> _List[str] | str:
+def uppercase(
+    items: _Optional[_Union[_List[str], _Set[str], str]],
+) -> _Optional[_Union[_List[str], _Set[str], str]]:
     """
     Converts the given string or list of strings to uppercase.
 
@@ -42,7 +45,7 @@ def uppercase(items: _List[str] | str) -> _List[str] | str:
         ['HELLO', 'WORLD']
     """
     if items is None:
-        return
+        return None
 
     if isinstance(items, list):
         return [item.strip().upper() for item in items]
@@ -123,7 +126,7 @@ def is_field_in_model(
 
 def get_mapper_enum(
     model: _Type[_T],
-    schema: _BaseModel,
+    schema: _Type[_BaseModel],
 ) -> _Tuple[_Dict[str, _Optional[str]], _Enum]:
     """
     Get the mapper alias dictionary and enum for the given model and schema.

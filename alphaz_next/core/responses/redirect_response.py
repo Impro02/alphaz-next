@@ -1,5 +1,5 @@
 # MODULES
-from typing import Mapping as _Mapping
+from typing import Dict as _Dict
 
 # FASTAPI
 from fastapi.responses import RedirectResponse as _RedirectResponse
@@ -24,7 +24,7 @@ class RedirectResponse(_RedirectResponse):
         self,
         url: str | _URL,
         status_code: int = 307,
-        headers: _Mapping[str, str] | None = None,
+        headers: _Dict[str, str] | None = None,
         ext_headers: _ExtHeaders | None = None,
         background: _BackgroundTask | None = None,
     ) -> None:

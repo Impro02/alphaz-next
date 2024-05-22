@@ -1,6 +1,6 @@
 # MODULES
 from os import PathLike as _PathLike, stat_result as _stat_result
-from typing import Mapping as _Mapping
+from typing import Dict as _Dict
 
 # FASTAPI
 from fastapi.responses import FileResponse as _FileResponse
@@ -24,7 +24,7 @@ class FileResponse(_FileResponse):
         self,
         path: str | _PathLike[str],
         status_code: int = 200,
-        headers: _Mapping[str, str] | None = None,
+        headers: _Dict[str, str] | None = None,
         ext_headers: _ExtHeaders | None = None,
         media_type: str | None = None,
         background: _BackgroundTask | None = None,

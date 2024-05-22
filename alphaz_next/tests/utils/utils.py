@@ -1,14 +1,20 @@
 # MODULES
 from enum import Enum as _Enum
 import json as _json
+import os
 import re as _re
 from pathlib import Path as _Path
 from typing import (
     Any as _Any,
+    Callable as _Callable,
     Dict as _Dict,
     List as _List,
-    Literal as _Literal,
     Optional as _Optional,
+    ParamSpec as _ParamSpec,
+    Tuple as _Tuple,
+    TypeVar as _TypeVar,
+    Union as _Union,
+    cast as _cast,
 )
 
 # DEEPDIFF
@@ -21,7 +27,11 @@ from unittest import (
 )
 
 # FASTAPI
+from fastapi import FastAPI as _FastAPI
 from fastapi.testclient import TestClient as _TestClient
+
+# STARLETTE
+from starlette.testclient import _RequestData
 
 # PYDANTIC
 from pydantic import BaseModel as _BaseModel, Field as _Field
@@ -74,7 +84,7 @@ class APiResponse(_BaseModel):
 
     status_code: int
     data: _Optional[_Any]
-    headers: _Dict
+    headers: _Dict[str, str]
 
 
 class ResponseFormatEnum(_Enum):
@@ -88,6 +98,8 @@ class ResponseFormatEnum(_Enum):
 class _AlphaTest(_TestCase):
     __RESET_BEFORE_NEXT_TEST__: bool = False
 
+    app: _FastAPI
+
     @classmethod
     def setUpClass(cls) -> None:
         """
@@ -98,7 +110,7 @@ class _AlphaTest(_TestCase):
         cls.enable_reset_before_next_test()
 
     @classmethod
-    def enable_reset_before_next_test(cls):
+    def enable_reset_before_next_test(cls) -> None:
         """
         Enable the reset before the next test.
 
@@ -108,7 +120,7 @@ class _AlphaTest(_TestCase):
         cls.__RESET_BEFORE_NEXT_TEST__ = True
 
     @classmethod
-    def disable_reset_before_next_test(cls):
+    def disable_reset_before_next_test(cls) -> None:
         """
         Disable the reset before the next test.
 
@@ -118,7 +130,7 @@ class _AlphaTest(_TestCase):
         cls.__RESET_BEFORE_NEXT_TEST__ = False
 
     @classmethod
-    def create_app(cls):
+    def create_app(cls) -> _FastAPI:
         """
         Creates an instance of the app.
         This method should be implemented by subclasses.
@@ -137,10 +149,10 @@ class _AlphaTest(_TestCase):
 
     def add_fake_headers(
         self,
-        headers: dict,
+        headers: _Optional[_Dict[str, str]] = None,
         with_fake_token: bool = False,
         with_fake_api_key: bool = False,
-    ):
+    ) -> _Dict[str, str]:
         """
         Adds fake headers to the given headers dictionary.
 
@@ -150,7 +162,7 @@ class _AlphaTest(_TestCase):
             with_fake_api_key (bool): Flag indicating whether to add a fake API key header.
 
         Returns:
-            dict: The updated headers dictionary with the fake headers added.
+            HeaderTypes: The updated headers dictionary with the fake headers added.
         """
         if headers is None:
             headers = {}
@@ -171,18 +183,18 @@ class _AlphaTest(_TestCase):
         self,
         url: str,
         params: _Optional[_QueryParamTypes] = None,
-        headers: _Optional[_HeaderTypes] = None,
+        headers: _Optional[_Dict[str, str]] = None,
         response_format: ResponseFormatEnum = ResponseFormatEnum.JSON,
         with_fake_token: bool = True,
         with_fake_api_key: bool = True,
         saved_path: _Optional[_Path] = None,
-    ):
+    ) -> APiResponse:
         """
         Sends a GET request to the specified URL with optional parameters and headers.
 
         Args:
             url (str): The URL to send the GET request to.
-            params (Optional[Union[Dict[str, Any], List[Tuple[str, Any]]]]): Optional parameters to include in the request.
+            params (Optional[_QueryParamTypes]): Optional parameters to include in the request.
             headers (Optional[Dict[str, str]]): Optional headers to include in the request.
             response_format (ResponseFormatEnum): The format in which the response should be returned. Defaults to JSON.
             with_fake_token (bool): Whether to include a fake token in the headers. Defaults to True.
@@ -214,26 +226,21 @@ class _AlphaTest(_TestCase):
         return APiResponse(
             status_code=status_code,
             data=data,
-            headers=response.headers,
-            header_status_description=response.headers.get(
-                _HeaderEnum.STATUS_DESCRIPTION.value
-            ),
-            header_pagination=response.headers.get(_HeaderEnum.PAGINATION.value),
-            header_warning=response.headers.get(_HeaderEnum.WARNING.value),
+            headers={k: v for k, v in response.headers.items()},
         )
 
     def put_client(
         self,
         url: str,
-        data=None,
-        json: _Any = None,
+        data: _Optional[_RequestData] = None,
+        json: _Optional[_Any] = None,
         params: _Optional[_QueryParamTypes] = None,
-        headers: _Optional[_HeaderTypes] = None,
+        headers: _Optional[_Dict[str, str]] = None,
         response_format: ResponseFormatEnum = ResponseFormatEnum.JSON,
         with_fake_token: bool = True,
         with_fake_api_key: bool = True,
-        saved_path: _Path = None,
-    ):
+        saved_path: _Optional[_Path] = None,
+    ) -> APiResponse:
         """
         Sends a PUT request to the specified URL with the given parameters.
 
@@ -275,26 +282,21 @@ class _AlphaTest(_TestCase):
         return APiResponse(
             status_code=status_code,
             data=data,
-            headers=response.headers,
-            header_status_description=response.headers.get(
-                _HeaderEnum.STATUS_DESCRIPTION.value
-            ),
-            header_pagination=response.headers.get(_HeaderEnum.PAGINATION.value),
-            header_warning=response.headers.get(_HeaderEnum.WARNING.value),
+            headers={k: v for k, v in response.headers.items()},
         )
 
     def patch_client(
         self,
         url: str,
-        data=None,
-        json: _Any = None,
+        data: _Optional[_RequestData] = None,
+        json: _Optional[_Any] = None,
         params: _Optional[_QueryParamTypes] = None,
-        headers: _Optional[_HeaderTypes] = None,
+        headers: _Optional[_Dict[str, str]] = None,
         response_format: ResponseFormatEnum = ResponseFormatEnum.JSON,
         with_fake_token: bool = True,
         with_fake_api_key: bool = True,
-        saved_path: _Path = None,
-    ):
+        saved_path: _Optional[_Path] = None,
+    ) -> APiResponse:
         """
         Sends a PATCH request to the specified URL using the client.
 
@@ -336,26 +338,21 @@ class _AlphaTest(_TestCase):
         return APiResponse(
             status_code=status_code,
             data=data,
-            headers=response.headers,
-            header_status_description=response.headers.get(
-                _HeaderEnum.STATUS_DESCRIPTION.value
-            ),
-            header_pagination=response.headers.get(_HeaderEnum.PAGINATION.value),
-            header_warning=response.headers.get(_HeaderEnum.WARNING.value),
+            headers={k: v for k, v in response.headers.items()},
         )
 
     def post_client(
         self,
         url: str,
-        data=None,
-        json: _Any = None,
+        data: _Optional[_RequestData] = None,
+        json: _Optional[_Any] = None,
         params: _Optional[_QueryParamTypes] = None,
-        headers: _Optional[_HeaderTypes] = None,
+        headers: _Optional[_Dict[str, str]] = None,
         response_format: ResponseFormatEnum = ResponseFormatEnum.JSON,
         with_fake_token: bool = True,
         with_fake_api_key: bool = True,
-        saved_path: _Path = None,
-    ):
+        saved_path: _Optional[_Path] = None,
+    ) -> APiResponse:
         """
         Sends a POST request to the specified URL using the provided data, JSON payload, parameters, and headers.
         Optionally adds fake token and API key headers.
@@ -399,24 +396,19 @@ class _AlphaTest(_TestCase):
         return APiResponse(
             status_code=status_code,
             data=data,
-            headers=response.headers,
-            header_status_description=response.headers.get(
-                _HeaderEnum.STATUS_DESCRIPTION.value
-            ),
-            header_pagination=response.headers.get(_HeaderEnum.PAGINATION.value),
-            header_warning=response.headers.get(_HeaderEnum.WARNING.value),
+            headers={k: v for k, v in response.headers.items()},
         )
 
     def delete_client(
         self,
         url: str,
-        params: dict = None,
-        headers: _Optional[_HeaderTypes] = None,
+        params: _Optional[_QueryParamTypes] = None,
+        headers: _Optional[_Dict[str, str]] = None,
         response_format: ResponseFormatEnum = ResponseFormatEnum.JSON,
         with_fake_token: bool = True,
         with_fake_api_key: bool = True,
-        saved_path: _Path = None,
-    ):
+        saved_path: _Optional[_Path] = None,
+    ) -> APiResponse:
         """
         Sends a DELETE request to the specified URL with optional parameters and headers.
 
@@ -454,20 +446,15 @@ class _AlphaTest(_TestCase):
         return APiResponse(
             status_code=status_code,
             data=data,
-            headers=response.headers,
-            header_status_description=response.headers.get(
-                _HeaderEnum.STATUS_DESCRIPTION.value
-            ),
-            header_pagination=response.headers.get(_HeaderEnum.PAGINATION.value),
-            header_warning=response.headers.get(_HeaderEnum.WARNING.value),
+            headers={k: v for k, v in response.headers.items()},
         )
 
     def _post_process_response(
         self,
         response: _Response,
         response_format: ResponseFormatEnum = ResponseFormatEnum.JSON,
-        saved_path: _Path = None,
-    ):
+        saved_path: _Optional[_Path] = None,
+    ) -> _Tuple[int, _Any]:
         """
         Post-processes the response based on the specified format and saves it to a file if required.
 
@@ -479,7 +466,8 @@ class _AlphaTest(_TestCase):
         Returns:
             The status code of the response and the processed data.
         """
-        match response_format:
+
+        match response_format.value:
             case response_format.JSON:
                 data = response.json()
                 if saved_path is not None:
@@ -500,7 +488,7 @@ class _AlphaTest(_TestCase):
         first: bytes,
         second: bytes,
         exception_row_prefix: bytes,
-    ):
+    ) -> None:
         """
         Asserts that two byte strings are equal, except for rows starting with the exception_row_prefix.
 
@@ -527,10 +515,10 @@ class _AlphaTest(_TestCase):
 
     def assertDictEqualExceptKeys(
         self,
-        dict1: dict,
-        dict2: dict,
-        ignored_keys: list[str] = None,
-    ):
+        dict1: _Dict[str, _Any],
+        dict2: _Dict[str, _Any],
+        ignored_keys: _Optional[_List[str]] = None,
+    ) -> None:
         """
         Asserts that two dictionaries are equal except for the specified keys.
 
@@ -548,10 +536,10 @@ class _AlphaTest(_TestCase):
 
     def assertNestedDictEqual(
         self,
-        first: _Dict,
-        second: _Dict,
-        ignored_keys: _List[str] = None,
-    ):
+        first: _Dict[str, _Any],
+        second: _Dict[str, _Any],
+        ignored_keys: _Optional[_List[str]] = None,
+    ) -> None:
         """
         Asserts that two nested dictionaries are equal, considering optional ignored keys.
 
@@ -564,12 +552,12 @@ class _AlphaTest(_TestCase):
             AssertionError: If the dictionaries are not equal.
 
         """
-        ignored_keys = [_re.compile(item) for item in ignored_keys or []]
+        exclude_regex_paths = [_re.compile(item) for item in ignored_keys or []]
 
         deep_diff = _DeepDiff(
             first,
             second,
-            exclude_regex_paths=ignored_keys,
+            exclude_regex_paths=exclude_regex_paths,
             ignore_numeric_type_changes=True,
         )
 
@@ -577,10 +565,10 @@ class _AlphaTest(_TestCase):
 
     def assertListOfDictEqual(
         self,
-        first: _List[dict],
-        second: _List[dict],
-        ignored_keys: _List[str] = None,
-    ):
+        first: _List[_Dict[str, _Any]],
+        second: _List[_Dict[str, _Any]],
+        ignored_keys: _Optional[_List[str]] = None,
+    ) -> None:
         """
         Asserts that two lists of dictionaries are equal.
 
@@ -598,7 +586,7 @@ class _AlphaTest(_TestCase):
         expected_response: ExpectedResponse,
         response: APiResponse,
         ignore_keys: bool = True,
-    ):
+    ) -> None:
         """
         Asserts that the expected response matches the actual response.
 
@@ -614,15 +602,17 @@ class _AlphaTest(_TestCase):
             response.headers.get(_HeaderEnum.PAGINATION.value),
         )
 
-        header_status_description = response.headers.get(
-            _HeaderEnum.STATUS_DESCRIPTION.value, []
+        header_status_description: _Optional[_Union[_List[str], str]] = (
+            response.headers.get(_HeaderEnum.STATUS_DESCRIPTION.value, [])
         )
-        if isinstance(header_status_description, str):
-            header_status_description = _json.loads(
-                response.headers.get(_HeaderEnum.STATUS_DESCRIPTION.value)
-            )
 
-            if not isinstance(header_status_description, list):
+        if header_status_description is not None:
+            if isinstance(header_status_description, str):
+                header_status_description = _json.loads(header_status_description)
+
+            if header_status_description is not None and not isinstance(
+                header_status_description, list
+            ):
                 header_status_description = [header_status_description]
 
         self.assertEqual(
@@ -641,13 +631,13 @@ class _AlphaTest(_TestCase):
         if isinstance(expected_response.data, list):
             self.assertListOfDictEqual(
                 expected_response.data,
-                response.data,
+                _cast(_List[_Dict[str, _Any]], response.data),
                 ignored_keys=self.get_ignored_keys() if ignore_keys else None,
             )
         elif isinstance(expected_response.data, dict):
             self.assertNestedDictEqual(
                 expected_response.data,
-                response.data,
+                _cast(_Dict[str, _Any], expected_response.data),
                 ignored_keys=self.get_ignored_keys() if ignore_keys else None,
             )
         else:
@@ -662,7 +652,7 @@ class AlphaTestCase(_AlphaTest):
     Base test case class for Alpha project.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Set up the test environment before each test case.
 
@@ -676,7 +666,7 @@ class AlphaTestCase(_AlphaTest):
         self.__RESET_BEFORE_NEXT_TEST__ = False
 
     @classmethod
-    def reset_tables(cls):
+    def reset_tables(cls) -> None:
         """
         Resets the tables in the database.
         """
@@ -686,7 +676,7 @@ class AlphaTestCase(_AlphaTest):
 class AlphaIsolatedAsyncioTestCase(_IsolatedAsyncioTestCase, _AlphaTest):
     """A base test case class for asynchronous tests with Alpha-specific setup and teardown."""
 
-    async def asyncSetUp(self):
+    async def asyncSetUp(self) -> None:
         """
         Set up the test case asynchronously.
 
@@ -700,71 +690,57 @@ class AlphaIsolatedAsyncioTestCase(_IsolatedAsyncioTestCase, _AlphaTest):
         self.__RESET_BEFORE_NEXT_TEST__ = False
 
     @classmethod
-    async def reset_tables(cls):
+    async def reset_tables(cls) -> None:
         """
         Reset the tables in the database.
         """
         raise NotImplementedError()
 
 
+_P = _ParamSpec("_P")
+_T = _TypeVar("_T")
+
+
 def load_expected_data(
-    saved_dir_path: _Path = None,
-    saved_file_path: str = None,
-    format: _Literal["json", "txt"] = "json",
+    saved_dir_path: _Optional[_Path] = None,
+    saved_file_path: _Optional[str] = None,
+    format: str = "json",
     encoding: str = "utf-8",
-    reset_before_next_test: bool = False,
-):
-    """
-    Decorator function that loads expected data from a file and passes it to the decorated test function.
+) -> _Callable[[_Callable[_P, _Any]], _Callable[_P, _Any]]:
 
-    Args:
-        saved_dir_path (_Path, optional): The directory path where the expected data file is located. Defaults to None.
-        saved_file_path (str, optional): The file path of the expected data file. Defaults to None.
-        format (Literal["json", "txt"], optional): The format of the expected data file. Defaults to "json".
-        encoding (str, optional): The encoding of the expected data file. Defaults to "utf-8".
-        reset_before_next_test (bool, optional): Flag indicating whether to reset before the next test. Defaults to False.
+    def decorator(func: _Callable[_P, _Any]) -> _Callable[_P, _Any]:
 
-    Returns:
-        The decorated test function.
-    """
-
-    def decorator(func):
-        def wrapper(self, *args, **kwargs):
-            class_name = self.__class__.__name__
-            function_name = func.__name__
-
-            if not isinstance(self, _AlphaTest):
-                raise TypeError(
-                    f"{self.__class__.__name__} must be instance of {_AlphaTest.__name__}"
-                )
-
-            (
-                self.enable_reset_before_next_test()
-                if reset_before_next_test
-                else self.disable_reset_before_next_test()
-            )
+        def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _Any:
+            qualname = func.__qualname__
+            if "." not in qualname:
+                raise ValueError("The function must be a method of a class")
 
             if saved_dir_path is None:
-                return func(self, *args, **kwargs)
+                return
 
             file_path = (
-                saved_dir_path / f"{class_name}__{function_name}.{format}"
+                saved_dir_path / f"{qualname.replace('.', '__')}.{format}"
                 if saved_file_path is None
                 else saved_dir_path / saved_file_path
             )
 
-            try:
-                match format:
-                    case "json":
-                        expected_data = _open_json_file(file_path, encoding=encoding)
-                    case "txt":
-                        expected_data = _open_file(file_path, encoding=encoding)
-                    case _:
-                        expected_data = {}
-            except (FileNotFoundError, FileExistsError):
-                expected_data = {}
+            expected_data: _Union[_List[_Dict[str, _Any]], _Dict[str, _Any], bytes] = {}
+            if os.path.exists(file_path):
+                with open(file_path, encoding=encoding) as file:
+                    match format:
+                        case "json":
+                            expected_data = _cast(
+                                _Union[_List[_Dict[str, _Any]], _Dict[str, _Any]],
+                                _json.load(file),
+                            )
+                        case "txt":
+                            expected_data_str = file.read()
+                            expected_data = expected_data_str.encode(encoding)
 
-            data = func(self, expected_data, file_path, *args, **kwargs)
+            kwargs["expected_data"] = expected_data
+            kwargs["saved_path"] = file_path
+
+            data = func(*args, **kwargs)
 
             return data
 

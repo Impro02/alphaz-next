@@ -3,8 +3,8 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 import sys as _sys
 from typing import (
+    Annotated,
     Any as _Any,
-    AsyncContextManager as _AsyncContextManager,
     Dict as _Dict,
     List as _List,
     Optional as _Optional,
@@ -30,13 +30,17 @@ from fastapi.openapi.docs import (
     get_swagger_ui_html as _get_swagger_ui_html,
     get_redoc_html as _get_redoc_html,
 )
-from fastapi.openapi.utils import get_openapi as _get_openapi, BaseRoute as _BaseRoute
+from fastapi.openapi.utils import get_openapi as _get_openapi
 from fastapi.responses import (
     HTMLResponse as _HTMLResponse,
     JSONResponse as _JSONResponse,
     PlainTextResponse as _PlainTextResponse,
     RedirectResponse as _RedirectResponse,
 )
+
+# STARLETTE
+from starlette.routing import BaseRoute as _BaseRoute
+from starlette.types import Lifespan as _Lifespan
 
 # MODELS
 from alphaz_next.models.config.alpha_config import (
@@ -65,7 +69,8 @@ uvicorn_logger = _logging.getLogger("uvicorn")
 
 
 def _custom_openapi(
-    config: _AlphaConfigSchema, routes: _List[_BaseRoute]
+    config: _AlphaConfigSchema,
+    routes: _List[_BaseRoute],
 ) -> _Dict[str, _Any]:
     """
     Generate a custom OpenAPI schema based on the provided configuration and routes.
@@ -81,15 +86,15 @@ def _custom_openapi(
     if config.environment.lower() != "prod":
         title = f"{title} [{config.environment.upper()}]"
 
-    openapi_dict = {}
+    openapi_dict: _Dict[str, _Any] = {}
     if (openapi_config := config.api_config.openapi) is not None:
         openapi_dict["description"] = openapi_config.description
         openapi_dict["tags"] = openapi_config.tags
 
         if openapi_config.contact is not None:
             openapi_dict["contact"] = {
-                "name": config.api_config.openapi.contact.name,
-                "email": config.api_config.openapi.contact.email,
+                "name": openapi_config.contact.name,
+                "email": openapi_config.contact.email,
             }
 
     openapi_schema = _get_openapi(
@@ -106,13 +111,13 @@ def create_app(
     config: _AlphaConfigSchema,
     routes: _Optional[_List[_BaseRoute]] = None,
     routers: _Optional[_List[_APIRouter]] = None,
-    lifespan: _Optional[_AsyncContextManager] = None,
+    lifespan: _Optional[_Lifespan[_FastAPI]] = None,
     allow_origins: _Sequence[str] = (),
     allow_methods: _Sequence[str] = ("GET",),
     allow_headers: _Sequence[str] = (),
     allow_credentials: bool = False,
     allow_private_network: bool = False,
-    status_response: _Dict = {"status": "OK"},
+    status_response: _Dict[str, _Any] = {"status": "OK"},
 ) -> _FastAPI:
     """
     Create a FastAPI application with the specified configuration.
@@ -156,7 +161,8 @@ def create_app(
 
     setup_telemetry(config=config, app=app)
 
-    [app.include_router(router) for router in routers or []]
+    for router in routers or []:
+        app.include_router(router)
 
     app.openapi_schema = _custom_openapi(config=config, routes=app.routes)
 
@@ -172,6 +178,7 @@ def create_app(
     if (
         config.api_config.logging is not None
         and config.api_config.logging.rotation is not None
+        and config.api_config.logging.retention is not None
     ):
         uvicorn_formatter = _logging.Formatter(
             config.api_config.logging.uvicorn_format,
@@ -253,13 +260,17 @@ def create_app(
         return _PlainTextResponse(str(exc), status_code=500)
 
     @app.get("/status", include_in_schema=False)
-    async def get_api_status():
+    async def get_api_status() -> _Dict[str, _Any]:
         return status_response
 
     @app.get("/docs", include_in_schema=False)
     def swagger_ui_html(req: _Request) -> _HTMLResponse:
         root_path = req.scope.get("root_path", "").rstrip("/")
-        openapi_url = root_path + app.openapi_url
+
+        openapi_url = root_path
+        if app.openapi_url is not None:
+            openapi_url += app.openapi_url
+
         oauth2_redirect_url = app.swagger_ui_oauth2_redirect_url
         if oauth2_redirect_url:
             oauth2_redirect_url = root_path + oauth2_redirect_url
@@ -274,7 +285,11 @@ def create_app(
         )
 
     @app.get("/redoc", include_in_schema=False)
-    async def redoc_html():
+    async def redoc_html() -> _HTMLResponse:
+        if app.openapi_url is None:
+            raise _HTTPException(
+                status_code=404, detail="No OpenAPI URL has been provided."
+            )
         return _get_redoc_html(
             openapi_url=app.openapi_url,
             title=app.title + " - ReDoc",
@@ -282,7 +297,7 @@ def create_app(
         )
 
     @app.get("/")
-    async def home():
+    async def home() -> _RedirectResponse:
         return _RedirectResponse("/docs")
 
     return app

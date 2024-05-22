@@ -2,7 +2,12 @@
 import http
 import logging as _logging
 import time
-from typing import Optional, Sequence
+from typing import (
+    Any as _Any,
+    Callable as _Callable,
+    Optional as _Optional,
+    Sequence as _Sequence,
+)
 
 # FASTAPI
 from fastapi import Request, Response
@@ -21,13 +26,13 @@ class CORSMiddleware(_CORSMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        allow_origins: Sequence[str] = (),
-        allow_methods: Sequence[str] = ("GET",),
-        allow_headers: Sequence[str] = (),
+        allow_origins: _Sequence[str] = (),
+        allow_methods: _Sequence[str] = ("GET",),
+        allow_headers: _Sequence[str] = (),
         allow_credentials: bool = False,
         allow_private_network: bool = False,
-        allow_origin_regex: Optional[str] = None,
-        expose_headers: Sequence[str] = (),
+        allow_origin_regex: _Optional[str] = None,
+        expose_headers: _Sequence[str] = (),
         max_age: int = 600,
     ) -> None:
         super().__init__(
@@ -50,7 +55,10 @@ class CORSMiddleware(_CORSMiddleware):
             ] = "true"
 
 
-async def log_request_middleware(request: Request, call_next):
+async def log_request_middleware(
+    request: Request,
+    call_next: _Callable[..., _Any],
+) -> Response:
     """
     This middleware will log all requests and their processing time.
     E.g. log:

@@ -79,7 +79,7 @@ class Logger:
     def info(
         self,
         message: str,
-        exc_info: Exception = None,
+        exc_info: _Optional[Exception] = None,
         stack_level: int = 1,
         monitor: _Optional[str] = None,
     ) -> None:
@@ -107,7 +107,7 @@ class Logger:
     def warning(
         self,
         message: str,
-        exc_info: Exception = None,
+        exc_info: _Optional[Exception] = None,
         stack_level: int = 1,
         monitor: _Optional[str] = None,
     ) -> None:
@@ -135,7 +135,7 @@ class Logger:
     def error(
         self,
         message: str,
-        exc_info: Exception = None,
+        exc_info: _Optional[Exception] = None,
         stack_level: int = 1,
         monitor: _Optional[str] = None,
     ) -> None:
@@ -160,7 +160,7 @@ class Logger:
     def critical(
         self,
         message: str,
-        exc_info: Exception = None,
+        exc_info: _Optional[Exception] = None,
         stack_level: int = 1,
         monitor: _Optional[str] = None,
     ) -> None:

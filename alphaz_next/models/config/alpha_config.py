@@ -46,20 +46,33 @@ class AlphaConfigSchema(_BaseModel):
 
     @_model_validator(mode="before")
     @classmethod
-    def validate_model(cls, data: _Dict[str, _Any]) -> _Dict:
+    def validate_model(cls, data: _Dict[str, _Any]) -> _Dict[str, _Any]:
+        environment = data.get("environment")
+        root = data.get("root")
+        project_name = data.get("project_name")
+
+        if environment is None or root is None or project_name is None:
+            raise ValueError("Environment, root, and project name must be provided.")
+
         tmp = _replace_reserved_config(
             data,
             reserved_config=_ReservedConfigItem(
-                environment=data.get("environment"),
-                root=data.get("root"),
-                project_name=data.get("project_name"),
+                environment=environment,
+                root=root,
+                project_name=project_name,
             ),
         )
 
+        root = tmp.get("root")
+        project_name = tmp.get("project_name")
+
+        if root is None or project_name is None:
+            raise ValueError("Root and project name must be provided.")
+
         reserved_fields = _ReservedConfigItem(
-            environment=data.get("environment"),
-            root=tmp.get("root"),
-            project_name=tmp.get("project_name"),
+            environment=environment,
+            root=root,
+            project_name=project_name,
         )
 
         for key, value in tmp.items():

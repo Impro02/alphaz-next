@@ -1,6 +1,8 @@
-# PYDANTIC
+# MODULES
+import logging as _logging
 from typing import Annotated as _Annotated, List as _List, Optional as _Optional
-from loguru import _defaults
+
+# OPENTELEMETRY
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 
 # PYDANTIC
@@ -15,13 +17,11 @@ from pydantic import (
 )
 
 LOGGING_LEVEL = {
-    "CRITICAL": _defaults.LOGURU_CRITICAL_NO,
-    "ERROR": _defaults.LOGURU_ERROR_NO,
-    "WARNING": _defaults.LOGURU_WARNING_NO,
-    "SUCCESS": _defaults.LOGURU_SUCCESS_NO,
-    "INFO": _defaults.LOGURU_INFO_NO,
-    "DEBUG": _defaults.LOGURU_DEBUG_NO,
-    "TRACE": _defaults.LOGURU_TRACE_NO,
+    "CRITICAL": _logging.CRITICAL,
+    "ERROR": _logging.ERROR,
+    "WARNING": _logging.WARNING,
+    "INFO": _logging.INFO,
+    "DEBUG": _logging.DEBUG,
 }
 
 
@@ -57,7 +57,7 @@ class LoggingSchema(_BaseModel):
 
     @_field_validator("format")
     @classmethod
-    def validate_format(cls, value: str, info: _FieldValidationInfo):
+    def validate_format(cls, value: str, info: _FieldValidationInfo) -> str:
         if value is not None:
             LoggingInstrumentor().instrument(logging_format=value)
 
@@ -65,13 +65,13 @@ class LoggingSchema(_BaseModel):
 
     @_field_validator("level")
     @classmethod
-    def validate_level(cls, value: str, info: _FieldValidationInfo):
+    def validate_level(cls, value: str, info: _FieldValidationInfo) -> str:
         if value not in LOGGING_LEVEL:
             raise ValueError(f"{info.field_name} is not valid")
 
         return value
 
-    @_computed_field
     @property
+    @_computed_field
     def level_code(self) -> int:
         return LOGGING_LEVEL.get(self.level.upper(), 0)

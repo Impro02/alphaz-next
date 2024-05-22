@@ -1,5 +1,5 @@
 # MODULES
-from typing import Mapping as _Mapping
+from typing import Dict as _Dict
 
 # FASTAPI
 from fastapi.responses import StreamingResponse as _StreamingResponse
@@ -24,7 +24,7 @@ class StreamingResponse(_StreamingResponse):
         self,
         content: _ContentStream,
         status_code: int = 200,
-        headers: _Mapping[str, str] | None = None,
+        headers: _Dict[str, str] | None = None,
         ext_headers: _ExtHeaders | None = None,
         media_type: str | None = None,
         background: _BackgroundTask | None = None,

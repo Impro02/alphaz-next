@@ -6,7 +6,7 @@ from typing import (
 )
 
 # PYSQL_REPO
-from pysql_repo import DataBase as _DataBase
+from pysql_repo.asyncio import AsyncDataBase as _AsyncDataBase
 from pysql_repo._database_base import (
     DataBaseConfigTypedDict as _DataBaseConfigTypedDict,
 )
@@ -19,7 +19,7 @@ from sqlalchemy.orm import DeclarativeBase
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 
 
-class DataBase(_DataBase):
+class AsyncDataBase(_AsyncDataBase):
 
     def __init__(
         self,
@@ -39,4 +39,4 @@ class DataBase(_DataBase):
             echo=echo,
         )
 
-        SQLAlchemyInstrumentor().instrument(engine=self._engine)
+        SQLAlchemyInstrumentor().instrument(engine=self._engine.sync_engine)

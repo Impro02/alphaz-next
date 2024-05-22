@@ -4,8 +4,9 @@ from typing import (
     Any as _Any,
     Dict as _Dict,
     List as _List,
-    Type,
-    TypeVar,
+    Type as _Type,
+    TypeVar as _TypeVar,
+    cast as _cast,
 )
 
 # FASTAPI
@@ -43,7 +44,7 @@ INTERNAL_CONFIG = _create_internal_config()
 API_KEY_HEADER = _APIKeyHeader(name="api_key", auto_error=False)
 OAUTH2_SCHEME = _OAuth2PasswordBearer(tokenUrl=INTERNAL_CONFIG.token_url)
 
-_T = TypeVar("_T", bound=_UserBaseSchema)
+_T = _TypeVar("_T", bound=_UserBaseSchema)
 
 
 def decode_token(token: str) -> _Dict[str, _Any]:
@@ -68,14 +69,14 @@ def decode_token(token: str) -> _Dict[str, _Any]:
     except _JWTError:
         raise _InvalidCredentialsError()
 
-    username: str = payload.get("sub")
+    username = _cast(str, payload.get("sub"))
     if username is None:
         raise _InvalidCredentialsError()
 
     return payload
 
 
-async def get_user(token: str, schema: Type[_T]) -> _T:
+async def get_user(token: str, schema: _Type[_T]) -> _T:
     """
     Retrieves user information using the provided token.
 
@@ -98,18 +99,19 @@ async def get_user(token: str, schema: Type[_T]) -> _T:
     response = await _make_async_request_with_retry(
         method="POST",
         url=INTERNAL_CONFIG.user_me_url,
-        **{
-            "headers": headers,
-        },
+        headers=headers,
     )
 
-    return _post_process_http_response(
-        response,
-        schema=schema,
+    return _cast(
+        _T,
+        _post_process_http_response(
+            response,
+            schema=schema,
+        ),
     )
 
 
-async def get_api_key(api_key: str, schema: Type[_T]) -> _T:
+async def get_api_key(api_key: str, schema: _Type[_T]) -> _T:
     """
     Retrieves the API key using the provided `api_key` and returns the processed response.
 
@@ -127,14 +129,15 @@ async def get_api_key(api_key: str, schema: Type[_T]) -> _T:
     response = await _make_async_request_with_retry(
         method="POST",
         url=INTERNAL_CONFIG.api_key_me_url,
-        **{
-            "headers": headers,
-        },
+        headers=headers,
     )
 
-    return _post_process_http_response(
-        response,
-        schema=schema,
+    return _cast(
+        _T,
+        _post_process_http_response(
+            response,
+            schema=schema,
+        ),
     )
 
 
@@ -159,7 +162,7 @@ def check_user_permissions(
 
 
 async def get_user_from_jwt(
-    schema: Type[_T],
+    schema: _Type[_T],
     security_scopes: _SecurityScopes,
     token: _Annotated[str, _Depends(OAUTH2_SCHEME)],
 ) -> _T:
@@ -195,7 +198,7 @@ async def get_user_from_jwt(
                 "WWW-Authenticate": "Bearer",
             },
             ext_headers={
-                "status_description": ex.args,
+                "status_description": [str(item) for item in ex.args],
             },
         )
     except _NotEnoughPermissionsError as ex:
@@ -205,13 +208,13 @@ async def get_user_from_jwt(
                 "WWW-Authenticate": "Bearer",
             },
             ext_headers={
-                "status_description": ex.args,
+                "status_description": [str(item) for item in ex.args],
             },
         )
 
 
 async def get_user_from_api_key(
-    schema: Type[_T],
+    schema: _Type[_T],
     security_scopes: _SecurityScopes,
     api_key: _Annotated[
         str,
@@ -253,7 +256,7 @@ async def get_user_from_api_key(
                 "WWW-Authenticate": "Bearer",
             },
             ext_headers={
-                "status_description": ex.args,
+                "status_description": [str(item) for item in ex.args],
             },
         )
     except _NotEnoughPermissionsError as ex:
@@ -263,6 +266,6 @@ async def get_user_from_api_key(
                 "WWW-Authenticate": "Bearer",
             },
             ext_headers={
-                "status_description": ex.args,
+                "status_description": [str(item) for item in ex.args],
             },
         )

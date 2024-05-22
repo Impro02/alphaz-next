@@ -1,23 +1,34 @@
 # MODULES
 import asyncio
 import time
-from typing import Any, List, Literal, Optional, Type, TypeVar, Union
+from typing import (
+    Any as _Any,
+    Dict as _Dict,
+    List as _List,
+    Literal as _Literal,
+    Optional as _Optional,
+    Type as _Type,
+    TypeVar as _TypeVar,
+    Union as _Union,
+)
 
 # FASTAPI
 from fastapi import HTTPException
 
+# PYDANTIC
+from pydantic import BaseModel
+
 # HTTPX
 import httpx
-from pydantic import BaseModel
 
 
 def make_request_with_retry(
-    method: Literal["POST", "PATCH", "PUT", "DELETE", "GET"],
+    method: _Literal["POST", "PATCH", "PUT", "DELETE", "GET"],
     url: str,
     max_retries: int = 3,
-    retry_on_status: Optional[List[int]] = None,
-    timeout: Optional[float] = None,
-    **kwargs,
+    retry_on_status: _Optional[_List[int]] = None,
+    timeout: _Optional[float] = None,
+    **kwargs: _Any,
 ) -> httpx.Response:
     """
     Makes an HTTP request with retries in case of a timeout error.
@@ -75,12 +86,12 @@ def make_request_with_retry(
 
 
 async def make_async_request_with_retry(
-    method: Literal["POST", "PATCH", "PUT", "DELETE", "GET"],
+    method: _Literal["POST", "PATCH", "PUT", "DELETE", "GET"],
     url: str,
     max_retries: int = 3,
-    retry_on_status: Optional[List[int]] = None,
-    timeout: Optional[float] = None,
-    **kwargs,
+    retry_on_status: _Optional[_List[int]] = None,
+    timeout: _Optional[float] = None,
+    **kwargs: _Any,
 ) -> httpx.Response:
     """
     Makes an HTTP request with retries in case of a timeout error.
@@ -137,14 +148,14 @@ async def make_async_request_with_retry(
     raise RuntimeError(f"Maximum number of retries exceeded {item_repr}")
 
 
-T = TypeVar("T", bound=BaseModel)
+_T = _TypeVar("_T", bound=BaseModel)
 
 
 def post_process_http_response(
     response: httpx.Response,
-    schema: Type[T] = None,
+    schema: _Optional[_Type[_T]] = None,
     mode_alpha: bool = False,
-) -> Union[T, List[T], Any]:
+) -> _Union[_T, _List[_T], _Any]:
     """
     Processes an HTTP response and returns the response body as a validated object or a list of validated objects.
 
@@ -163,7 +174,7 @@ def post_process_http_response(
         raise HTTPException(
             status_code=response.status_code,
             detail=response.text,
-            headers=response.headers,
+            headers={k: v for k, v in response.headers.items()},
         )
 
     response_json = response.json()

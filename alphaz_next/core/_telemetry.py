@@ -4,9 +4,14 @@ import logging as _logging
 import platform as _platform
 import psutil as _psutil
 from typing import (
+    Any as _Any,
     Dict as _Dict,
+    Generator as _Generator,
     Optional as _Optional,
     List as _List,
+    Tuple as _Tuple,
+    NamedTuple as _NamedTuple,
+    cast,
 )
 
 # FASTAPI
@@ -23,6 +28,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.resources import (
+    Attributes,
     Resource,
     SERVICE_NAME,
     SERVICE_VERSION,
@@ -36,6 +42,7 @@ from opentelemetry.instrumentation.system_metrics import (
     SystemMetricsInstrumentor as _SystemMetricsInstrumentor,
 )
 from opentelemetry.metrics import (
+    Meter,
     CallbackOptions,
     Observation,
 )
@@ -46,14 +53,19 @@ from alphaz_next.models.config.alpha_config import (
 )
 
 
+class MemoryInfo(_NamedTuple):
+    vms: int
+    rss: int
+
+
 class SystemMetricsInstrumentor(_SystemMetricsInstrumentor):
 
     def __init__(
         self,
         labels: _Dict[str, str] | None = None,
-        config: _Dict[str, _List[str]] | None = None,
+        config: _Dict[str, _Optional[_List[str]]] | None = None,
     ):
-        super().__init__(labels, config)
+        super().__init__(labels, cast(_Dict[str, _List[str]], config))
 
         self._process = _psutil.Process()
         self._process.cpu_percent(interval=None)
@@ -65,52 +77,54 @@ class SystemMetricsInstrumentor(_SystemMetricsInstrumentor):
         self._system_process_memory_size_labels = self._labels.copy()
         self._system_process_memory_rss_byte_labels = self._labels.copy()
 
-    def _instrument(self, **kwargs):
-        super()._instrument(**kwargs)
+    def _instrument(self, **kwargs: _Any) -> None:
+        super()._instrument(**kwargs) # type: ignore
+
+        meter = cast(Meter, self._meter)
 
         if "system.cpu.total.norm.pct" in self._config:
-            self._meter.create_observable_gauge(
+            meter.create_observable_gauge(
                 name="system.cpu.total.norm.pct",
                 callbacks=[self._get_system_cpu_total_norm_pct],
                 description="System CPU total normalized percent",
             )
 
         if "system.memory.actual.free" in self._config:
-            self._meter.create_observable_gauge(
+            meter.create_observable_gauge(
                 name="system.memory.actual.free",
                 callbacks=[self._get_system_memory_actual_free],
                 description="System memory actual free",
             )
 
         if "system.memory.total" in self._config:
-            self._meter.create_observable_gauge(
+            meter.create_observable_gauge(
                 name="system.memory.total",
                 callbacks=[self._get_system_memory_total],
                 description="System memory total",
             )
 
         if "system.process.cpu.total.norm.pct" in self._config:
-            self._meter.create_observable_gauge(
+            meter.create_observable_gauge(
                 name="system.process.cpu.total.norm.pct",
                 callbacks=[self._get_system_process_cpu_total_norm_pct],
                 description="System process CPU total normalized percent",
             )
 
         if "system.process.memory.size" in self._config:
-            self._meter.create_observable_gauge(
+            meter.create_observable_gauge(
                 name="system.process.memory.size",
                 callbacks=[self._get_system_process_memory_size],
                 description="System process memory size",
             )
 
         if "system.process.memory.rss.byte" in self._config:
-            self._meter.create_observable_gauge(
+            meter.create_observable_gauge(
                 name="system.process.memory.rss.bytes",
                 callbacks=[self._get_system_process_memory_rss_byte],
                 description="System process memory rss bytes",
             )
 
-    def _get_process_infos(self, p: _psutil.Process):
+    def _get_process_infos(self, p: _psutil.Process) -> _Tuple[float, MemoryInfo]:
         if hasattr(p, "oneshot"):  # new in psutil 5.0
             with p.oneshot():
                 cpu_percent = p.cpu_percent(interval=None)
@@ -119,44 +133,61 @@ class SystemMetricsInstrumentor(_SystemMetricsInstrumentor):
             cpu_percent = p.cpu_percent(interval=None)
             memory_info = p.memory_info()
 
-        return cpu_percent, memory_info
+        return cpu_percent, cast(MemoryInfo, memory_info)
 
-    def _get_system_cpu_total_norm_pct(self, options: CallbackOptions):
+    def _get_system_cpu_total_norm_pct(
+        self,
+        options: CallbackOptions,
+    ) -> _Generator[Observation, None, None]:
         cpu_norm_percent = _psutil.cpu_percent(interval=None) / 100.0
         yield Observation(
             cpu_norm_percent,
             self._system_cpu_total_norm_pct_labels,
         )
 
-    def _get_system_memory_actual_free(self, options: CallbackOptions):
+    def _get_system_memory_actual_free(
+        self,
+        options: CallbackOptions,
+    ) -> _Generator[Observation, None, None]:
         memory = _psutil.virtual_memory()
         yield Observation(
             memory.available,
             self._system_memory_actual_free_labels,
         )
 
-    def _get_system_memory_total(self, options: CallbackOptions):
+    def _get_system_memory_total(
+        self,
+        options: CallbackOptions,
+    ) -> _Generator[Observation, None, None]:
         memory = _psutil.virtual_memory()
         yield Observation(
             memory.total,
             self._system_memory_total_labels,
         )
 
-    def _get_system_process_cpu_total_norm_pct(self, options: CallbackOptions):
+    def _get_system_process_cpu_total_norm_pct(
+        self,
+        options: CallbackOptions,
+    ) -> _Generator[Observation, None, None]:
         cpu_percent, _ = self._get_process_infos(p=self._process)
         yield Observation(
             cpu_percent / 100.0 / _psutil.cpu_count(),
             self._system_process_cpu_total_norm_pct_labels,
         )
 
-    def _get_system_process_memory_size(self, options: CallbackOptions):
+    def _get_system_process_memory_size(
+        self,
+        options: CallbackOptions,
+    ) -> _Generator[Observation, None, None]:
         _, memory_info = self._get_process_infos(p=self._process)
         yield Observation(
             memory_info.vms,
             self._system_process_memory_size_labels,
         )
 
-    def _get_system_process_memory_rss_byte(self, options: CallbackOptions):
+    def _get_system_process_memory_rss_byte(
+        self, options: CallbackOptions
+    ) -> _Generator[Observation, None, None]:
         _, memory_info = self._get_process_infos(p=self._process)
         yield Observation(
             memory_info.rss,
@@ -164,20 +195,38 @@ class SystemMetricsInstrumentor(_SystemMetricsInstrumentor):
         )
 
 
+def _convert_os_headers(
+    env_variable_name: str,
+    default_headers: _Optional[_Dict[str, str]] = None,
+) -> _Optional[_Dict[str, str]]:
+    env_headers = _os.getenv(env_variable_name)
+    if env_headers is None:
+        return default_headers
+
+    key_value_pairs = env_headers.split(",")
+    result_dict: _Dict[str, str] = {}
+
+    for pair in key_value_pairs:
+        key, value = pair.split("=")
+        result_dict[key] = value
+
+    return result_dict
+
+
 def _setup_traces(
     default_endpoint: str,
-    default_headers: _Optional[str] = None,
+    resource: Resource,
+    default_headers: _Optional[_Dict[str, str]] = None,
     certificate_file: _Optional[str] = None,
-    resource: _Optional[Resource] = None,
 ) -> None:
     """
     Set up traces for telemetry.
 
     Args:
         default_endpoint (str): The default endpoint for exporting traces.
-        default_headers (str, optional): The default headers for exporting traces. Defaults to None.
+        resource (Resource): The resource for exporting traces.
+        default_headers (Dict[str, str], optional): The default headers for exporting traces.
         certificate_file (str, optional): The certificate file for exporting traces. Defaults to None.
-        resource (Resource, optional): The resource for exporting traces. Defaults to None.
     """
 
     endpoint = _os.environ.get(
@@ -185,9 +234,9 @@ def _setup_traces(
         f"{default_endpoint}/v1/traces",
     )
 
-    headers = _os.environ.get(
-        "OTEL_EXPORTER_OTLP_TRACES_HEADERS",
-        default_headers,
+    headers = _convert_os_headers(
+        env_variable_name="OTEL_EXPORTER_OTLP_TRACES_HEADERS",
+        default_headers=default_headers,
     )
 
     exporter = OTLPSpanExporter(
@@ -206,21 +255,22 @@ def _setup_traces(
 
 
 def _setup_metrics(
-    export_interval_millis: int,
     default_endpoint: str,
-    default_headers: _Optional[str] = None,
+    resource: Resource,
+    export_interval_millis: _Optional[float] = None,
+    default_headers: _Optional[_Dict[str, str]] = None,
     certificate_file: _Optional[str] = None,
-    resource: _Optional[Resource] = None,
     configuration: _Optional[_Dict[str, _Optional[_List[str]]]] = None,
-):
+) -> None:
     """
     Set up metrics configuration for telemetry.
 
     Args:
         default_endpoint (str): The default endpoint for exporting metrics.
-        default_headers (str, optional): The default headers for exporting metrics. Defaults to None.
+        resource (Resource): The resource for exporting traces.
+        export_interval_millis (float, optional): The interval for exporting metrics. Defaults to None.
+        default_headers (Dict[str, str], optional): The default headers for exporting traces.
         certificate_file (str, optional): The path to the certificate file. Defaults to None.
-        resource (Resource, optional): The resource associated with the metrics. Defaults to None.
         configuration (Dict[str, List[str]], optional): The configuration for the metrics. Defaults to None.
     """
 
@@ -229,9 +279,9 @@ def _setup_metrics(
         f"{default_endpoint}/v1/metrics",
     )
 
-    headers = _os.environ.get(
-        "OTEL_EXPORTER_OTLP_METRICS_HEADERS",
-        default_headers,
+    headers = _convert_os_headers(
+        env_variable_name="OTEL_EXPORTER_OTLP_METRICS_HEADERS",
+        default_headers=default_headers,
     )
 
     exporter = OTLPMetricExporter(
@@ -254,18 +304,18 @@ def _setup_metrics(
 
 def _setup_logs(
     default_endpoint: str,
-    default_headers: _Optional[str] = None,
+    resource: Resource,
+    default_headers: _Optional[_Dict[str, str]] = None,
     certificate_file: _Optional[str] = None,
-    resource: _Optional[Resource] = None,
 ) -> LoggingHandler:
     """
     Set up logs for telemetry.
 
     Args:
         default_endpoint (str): The default endpoint for exporting logs.
+        resource (Resource): The resource associated with the logs.
         default_headers (str, optional): The default headers for exporting logs. Defaults to None.
         certificate_file (str, optional): The path to the certificate file. Defaults to None.
-        resource (Resource, optional): The resource associated with the logs. Defaults to None.
 
     Returns:
         LoggingHandler: The logging handler for the telemetry logs.
@@ -276,9 +326,9 @@ def _setup_logs(
         f"{default_endpoint}/v1/logs",
     )
 
-    headers = _os.environ.get(
-        "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
-        default_headers,
+    headers = _convert_os_headers(
+        env_variable_name="OTEL_EXPORTER_OTLP_LOGS_HEADERS",
+        default_headers=default_headers,
     )
 
     exporter = OTLPLogExporter(
@@ -293,7 +343,7 @@ def _setup_logs(
     return LoggingHandler(level=_logging.INFO, logger_provider=logger_provider)
 
 
-def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI):
+def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI) -> None:
     """
     Sets up OpenTelemetry for the application.
 
@@ -314,9 +364,8 @@ def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI):
     environment = config.environment.lower()
     version = config.version
 
-    otel_exporter_otlp_headers = _os.environ.get(
-        "OTEL_EXPORTER_OTLP_HEADERS",
-        None,
+    otel_exporter_otlp_headers = _convert_os_headers(
+        env_variable_name="OTEL_EXPORTER_OTLP_HEADERS"
     )
 
     otel_exporter_otlp_endpoint = _os.environ.get(
@@ -340,7 +389,7 @@ def setup_telemetry(config: _AlphaConfigSchema, app: _FastAPI):
         key, value = pair.split("=")
         result_dict[key] = value
 
-    resourceAttributes = {
+    resourceAttributes: Attributes = {
         SERVICE_NAME: otel_service_name,
         SERVICE_INSTANCE_ID: _platform.node(),
         SERVICE_VERSION: result_dict["service.version"],

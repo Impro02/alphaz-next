@@ -1,6 +1,6 @@
 # MODULES
 from pathlib import Path as _Path
-from typing import Type as _Type, TypeVar as _TypeVar
+from typing import Any, Dict, Type as _Type, TypeVar as _TypeVar, cast
 
 # PYDANTIC
 from pydantic import Field as _Field, computed_field as _computed_field
@@ -22,7 +22,7 @@ def create_config_settings(
     root_alias: str = "ALPHA_ROOT",
     port_alias: str = "ALPHA_PORT",
     workers_alias: str = "ALPHA_WORKERS",
-):
+) -> _T:
     """
     Create configuration settings based on the provided parameters.
 
@@ -44,10 +44,10 @@ def create_config_settings(
         port: int = _Field(default=8000, validation_alias=port_alias)
         workers: int = _Field(default=1, validation_alias=workers_alias)
 
-        @_computed_field
         @property
+        @_computed_field
         def main_config(self) -> _T:
-            data = _open_json_file(path=_Path(path))
+            data = cast(Dict[str, Any], _open_json_file(path=_Path(path)))
 
             data_ext = {
                 "environment": self.environment,

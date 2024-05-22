@@ -2,7 +2,7 @@
 import getpass
 import os
 import re
-from typing import Any, Dict, TypedDict
+from typing import Any, Dict, List, TypeVar, TypedDict, Union, cast
 from pathlib import Path
 
 # LIBS
@@ -10,6 +10,8 @@ from alphaz_next.libs.file_lib import open_json_file
 
 
 _CONFIG_PATTERN = r"\$config\(([^)]*)\)"
+
+_T = TypeVar("_T", bound=Union[List[Dict[str, Any]], Dict[str, Any]])
 
 
 class ReservedConfigItem(TypedDict):
@@ -28,9 +30,9 @@ class ReservedConfigItem(TypedDict):
 
 
 def replace_reserved_config(
-    config: Dict,
+    config: _T,
     reserved_config: ReservedConfigItem,
-) -> Dict:
+) -> _T:
     """
     Replaces reserved variables in the configuration dictionary with their corresponding values.
 
@@ -59,20 +61,31 @@ def replace_reserved_config(
         return traverse(result)
 
     def replace_variable(value: Any) -> Any:
+        if not isinstance(value, str):
+            return value
+
+        root = reserved_config.get("root")
+        project_name = reserved_config.get("project_name")
+        environment = reserved_config.get("environment")
+
+        if root is not None:
+            value.replace("{{root}}", root)
+
+        if project_name is not None:
+            value.replace("{{project_name}}", project_name)
+
+        if environment is not None:
+            value.replace("{{environment}}", environment)
+
         return (
-            (
-                value.replace("{{root}}", reserved_config.get("root"))
-                .replace("{{home}}", os.path.expanduser("~"))
-                .replace("{{project_name}}", reserved_config.get("project_name"))
-                .replace("{{user}}", getpass.getuser())
-                .replace("{{project}}", os.path.abspath(os.getcwd()))
-                .replace("{{environment}}", reserved_config.get("environment"))
-            )
-            if isinstance(value, str)
-            else value
+            value.replace("{{home}}", os.path.expanduser("~"))
+            .replace("{{user}}", getpass.getuser())
+            .replace("{{project}}", os.path.abspath(os.getcwd()))
         )
 
-    def traverse(obj: Any) -> Any:
+    def traverse(
+        obj: Union[List[Dict[str, Any]], Dict[str, Any]]
+    ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         if isinstance(obj, dict):
             for key, value in obj.items():
                 if isinstance(value, (dict, list)):
@@ -90,4 +103,4 @@ def replace_reserved_config(
 
         return obj
 
-    return traverse(replaced_config)
+    return cast(_T, traverse(replaced_config))

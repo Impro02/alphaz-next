@@ -18,14 +18,14 @@ class InvalidCredentialsError(Exception):
         None
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("Could not validate credentials")
 
 
 class NotEnoughPermissionsError(Exception):
     """Exception raised when there are not enough permissions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("Not enough permissions")
 
 

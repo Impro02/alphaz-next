@@ -19,7 +19,7 @@ class LevelFilter(_logging.Filter):
         super().__init__()
         self._levels = levels
 
-    def filter(self, record):
+    def filter(self, record: _logging.LogRecord) -> bool:
         return record.levelno in self._levels
 
 
@@ -38,7 +38,7 @@ class AttributeFilter(_logging.Filter):
         super().__init__()
         self.param_ = param
 
-    def filter(self, record):
+    def filter(self, record: _logging.LogRecord) -> bool:
         monitor = record.__dict__.get(self.param_, None)
         return monitor is not None
 
@@ -52,7 +52,7 @@ class ExcludeRoutersFilter(_logging.Filter):
         self,
         router_names: _List[str],
         pattern: str = r'"([A-Z]+) ([^"]+)"',
-    ):
+    ) -> None:
         """
         Initialize the LoggingFilter object.
 
@@ -65,7 +65,7 @@ class ExcludeRoutersFilter(_logging.Filter):
         self.router_names = router_names
         self._pattern = pattern
 
-    def filter(self, record):
+    def filter(self, record: _logging.LogRecord) -> bool:
         """
         Filters the log record based on the configured pattern and router names.
 

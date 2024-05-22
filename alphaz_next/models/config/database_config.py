@@ -1,6 +1,7 @@
 # MODULES
 from pathlib import Path as _Path
 from typing import (
+    Any as _Any,
     Dict as _Dict,
     Optional as _Optional,
 )
@@ -25,7 +26,7 @@ class _DatabaseConfigBaseSchema(_BaseModel):
     driver: str
     ini: bool = False
     init_database_dir_json: _Optional[str] = _Field(default=None)
-    connect_args: _Optional[_Dict] = _Field(default=None)
+    connect_args: _Optional[_Dict[str, _Any]] = _Field(default=None)
 
 
 class _DatabaseCxOracleConfigSchema(_DatabaseConfigBaseSchema):
@@ -39,8 +40,8 @@ class _DatabaseCxOracleConfigSchema(_DatabaseConfigBaseSchema):
     port: int
     service_name: str
 
-    @_computed_field
     @property
+    @_computed_field
     def connection_string(self) -> str:
         """
         Returns the connection string for the Oracle database.
@@ -62,8 +63,8 @@ class _DatabaseOracleDbConfigSchema(_DatabaseConfigBaseSchema):
     port: int
     service_name: str
 
-    @_computed_field
     @property
+    @_computed_field
     def connection_string(self) -> str:
         """
         Returns the connection string for the Oracle database.
@@ -85,8 +86,8 @@ class _DatabaseOracleDbAsyncConfigSchema(_DatabaseConfigBaseSchema):
     port: int
     service_name: str
 
-    @_computed_field
     @property
+    @_computed_field
     def connection_string(self) -> str:
         """
         Returns the connection string for the Oracle database.
@@ -104,8 +105,8 @@ class _DatabaseSqliteConfigSchema(_DatabaseConfigBaseSchema):
 
     path: str
 
-    @_computed_field
     @property
+    @_computed_field
     def connection_string(self) -> str:
         """
         Returns the connection string for the SQLite database.
@@ -122,8 +123,8 @@ class _DatabaseAioSqliteConfigSchema(_DatabaseConfigBaseSchema):
 
     path: str
 
-    @_computed_field
     @property
+    @_computed_field
     def connection_string(self) -> str:
         """
         Returns the connection string for the SQLite database.
@@ -142,7 +143,7 @@ class DatabaseConfigSchema(_BaseModel):
     connection_string: str
     ini: bool = False
     init_database_dir_json: _Optional[str] = _Field(default=None)
-    connect_args: _Optional[_Dict] = _Field(default=None)
+    connect_args: _Optional[_Dict[str, _Any]] = _Field(default=None)
 
 
 class DatabasesConfigSchema(_BaseModel):
@@ -159,7 +160,7 @@ class DatabasesConfigSchema(_BaseModel):
 
     @_model_validator(mode="before")
     @classmethod
-    def validate_config(cls, data: _Dict) -> _Dict:
+    def validate_config(cls, data: _Dict[str, _Any]) -> _Dict[str, _Any]:
         data_tmp = {}
         for k, v in data.items():
             if "driver" not in v:
@@ -167,20 +168,15 @@ class DatabasesConfigSchema(_BaseModel):
 
             match (driver := v.get("driver")):
                 case "cx_oracle":
-                    config = _DatabaseCxOracleConfigSchema(**v)
-                    data_tmp[k] = config.model_dump()
+                    data_tmp[k] = _DatabaseCxOracleConfigSchema(**v).model_dump()
                 case "oracledb":
-                    config = _DatabaseOracleDbConfigSchema(**v)
-                    data_tmp[k] = config.model_dump()
+                    data_tmp[k] = _DatabaseOracleDbConfigSchema(**v).model_dump()
                 case "oracledb_async":
-                    config = _DatabaseOracleDbAsyncConfigSchema(**v)
-                    data_tmp[k] = config.model_dump()
+                    data_tmp[k] = _DatabaseOracleDbAsyncConfigSchema(**v).model_dump()
                 case "sqlite":
-                    config = _DatabaseSqliteConfigSchema(**v)
-                    data_tmp[k] = config.model_dump()
+                    data_tmp[k] = _DatabaseSqliteConfigSchema(**v).model_dump()
                 case "aiosqlite":
-                    config = _DatabaseAioSqliteConfigSchema(**v)
-                    data_tmp[k] = config.model_dump()
+                    data_tmp[k] = _DatabaseAioSqliteConfigSchema(**v).model_dump()
                 case _:
                     raise RuntimeError(f"database type {driver=} is not supported")
 

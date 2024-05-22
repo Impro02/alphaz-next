@@ -1,5 +1,5 @@
 # MODULES
-from typing import Any as _Any, Mapping as _Mapping
+from typing import Any as _Any, Dict as _Dict
 
 # FASTAPI
 from fastapi.responses import PlainTextResponse as _PlainTextResponse
@@ -23,7 +23,7 @@ class PlainTextResponse(_PlainTextResponse):
         self,
         content: _Any = None,
         status_code: int = 200,
-        headers: _Mapping[str, str] | None = None,
+        headers: _Dict[str, str] | None = None,
         ext_headers: _ExtHeaders | None = None,
         media_type: str | None = None,
         background: _BackgroundTask | None = None,

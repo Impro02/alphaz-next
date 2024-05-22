@@ -10,7 +10,9 @@ class UserBaseSchema(BaseModel):
     Represents a base schema for a user.
     """
 
-    @computed_field
     @property
+    @computed_field
     def permissions(self) -> List[str]:
-        NotImplementedError("This method must be implemented in the derived class.")
+        raise NotImplementedError(
+            "This method must be implemented in the derived class."
+        )
