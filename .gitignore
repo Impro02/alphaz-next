@@ -9,7 +9,7 @@ backend/workspace.code-workspace
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
 # IDE - VSCode
-.vscode/*
+.vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
@@ -56,7 +56,4 @@ backend/build/
 
 ### Backend ###
 *.pyc
-backend/.gradle
-backend/configs.dmp
-backend/tmp/configs.dmp
-.vscode/launch.json
+reports/
