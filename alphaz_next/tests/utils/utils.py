@@ -464,7 +464,7 @@ class _AlphaTest(_TestCase):
             The status code of the response and the processed data.
         """
 
-        match response_format.value:
+        match response_format:
             case response_format.JSON:
                 data = response.json()
                 if saved_path is not None:
