@@ -56,4 +56,5 @@ backend/build/
 
 ### Backend ###
 *.pyc
+.mypy_cache/
 reports/
