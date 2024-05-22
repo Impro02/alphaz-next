@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = "0.7.0"
+version = "0.7.1"
 
 with open("requirements.txt") as f:
     required_packages = f.read().splitlines()
@@ -31,4 +31,6 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
     ],
+    package_data={"alphaz_next": ["py.typed"]},
+    include_package_data=True,
 )
