@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 version = "0.6.6"
 
@@ -13,22 +13,7 @@ EXTRAS_REQUIRE = {
 setup(
     name="alphaz-next",
     version=version,
-    packages=[
-        "alphaz_next",
-        "alphaz_next.asyncio",
-        "alphaz_next.auth",
-        "alphaz_next.core",
-        "alphaz_next.core.responses",
-        "alphaz_next.libs",
-        "alphaz_next.models",
-        "alphaz_next.models.auth",
-        "alphaz_next.models.config",
-        "alphaz_next.models.config._base",
-        "alphaz_next.tests",
-        "alphaz_next.tests.utils",
-        "alphaz_next.tests.utils.mocking",
-        "alphaz_next.utils",
-    ],
+    packages=find_packages(),
     install_requires=required_packages,
     extras_require=EXTRAS_REQUIRE,
     license="MIT",
