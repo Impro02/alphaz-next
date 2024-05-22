@@ -71,7 +71,7 @@ class LoggingSchema(_BaseModel):
 
         return value
 
+    @_computed_field  # type: ignore
     @property
-    @_computed_field
     def level_code(self) -> int:
         return LOGGING_LEVEL.get(self.level.upper(), 0)

@@ -44,8 +44,8 @@ def create_config_settings(
         port: int = _Field(default=8000, validation_alias=port_alias)
         workers: int = _Field(default=1, validation_alias=workers_alias)
 
+        @_computed_field  # type: ignore
         @property
-        @_computed_field
         def main_config(self) -> _T:
             data = cast(Dict[str, Any], _open_json_file(path=_Path(path)))
 

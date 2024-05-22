@@ -40,8 +40,8 @@ class _DatabaseCxOracleConfigSchema(_DatabaseConfigBaseSchema):
     port: int
     service_name: str
 
+    @_computed_field  # type: ignore
     @property
-    @_computed_field
     def connection_string(self) -> str:
         """
         Returns the connection string for the Oracle database.
@@ -63,8 +63,8 @@ class _DatabaseOracleDbConfigSchema(_DatabaseConfigBaseSchema):
     port: int
     service_name: str
 
+    @_computed_field  # type: ignore
     @property
-    @_computed_field
     def connection_string(self) -> str:
         """
         Returns the connection string for the Oracle database.
@@ -86,8 +86,8 @@ class _DatabaseOracleDbAsyncConfigSchema(_DatabaseConfigBaseSchema):
     port: int
     service_name: str
 
+    @_computed_field  # type: ignore
     @property
-    @_computed_field
     def connection_string(self) -> str:
         """
         Returns the connection string for the Oracle database.
@@ -105,8 +105,8 @@ class _DatabaseSqliteConfigSchema(_DatabaseConfigBaseSchema):
 
     path: str
 
+    @_computed_field  # type: ignore
     @property
-    @_computed_field
     def connection_string(self) -> str:
         """
         Returns the connection string for the SQLite database.
@@ -123,8 +123,8 @@ class _DatabaseAioSqliteConfigSchema(_DatabaseConfigBaseSchema):
 
     path: str
 
+    @_computed_field  # type: ignore
     @property
-    @_computed_field
     def connection_string(self) -> str:
         """
         Returns the connection string for the SQLite database.
