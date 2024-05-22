@@ -1,0 +1,16 @@
+[project]
+name = "alphaz-next"
+dynamic = ["version"]
+description = "A project to make a lib to start FastAPI quickly"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    { name = "Maxime MARTIN", email = "maxime.martin02@hotmail.fr" },
+]
+
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+module = "deepdiff"
+ignore_missing_imports = true
