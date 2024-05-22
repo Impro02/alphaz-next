@@ -5,11 +5,10 @@ fastapi>=0.108.0
 pydantic_settings
 pydantic>=2.5
 sqlalchemy_utils
-pytz
 email-validator
 deepdiff
 unidecode
-pysql-repo>=0.6.3
+pysql-repo==0.7.3.1
 loguru
 opentelemetry-api
 opentelemetry-exporter-otlp-proto-http
