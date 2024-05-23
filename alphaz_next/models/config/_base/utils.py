@@ -64,21 +64,11 @@ def replace_reserved_config(
         if not isinstance(value, str):
             return value
 
-        root = reserved_config.get("root")
-        project_name = reserved_config.get("project_name")
-        environment = reserved_config.get("environment")
-
-        if root is not None:
-            value.replace("{{root}}", root)
-
-        if project_name is not None:
-            value.replace("{{project_name}}", project_name)
-
-        if environment is not None:
-            value.replace("{{environment}}", environment)
-
         return (
-            value.replace("{{home}}", os.path.expanduser("~"))
+            value.replace("{{root}}", reserved_config["root"])
+            .replace("{{project_name}}", reserved_config["project_name"])
+            .replace("{{environment}}", reserved_config["environment"])
+            .replace("{{home}}", os.path.expanduser("~"))
             .replace("{{user}}", getpass.getuser())
             .replace("{{project}}", os.path.abspath(os.getcwd()))
         )
