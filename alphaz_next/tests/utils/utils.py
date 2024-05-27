@@ -703,39 +703,39 @@ def load_expected_data(
     saved_file_path: _Optional[str] = None,
     format: str = "json",
     encoding: str = "utf-8",
-) -> _Callable[[_Callable[_P, _Any]], _Callable[_P, _Any]]:
+) -> _Callable[[_Callable[_P, _T]], _Callable[_P, _T]]:
 
-    def decorator(func: _Callable[_P, _Any]) -> _Callable[_P, _Any]:
+    def decorator(func: _Callable[_P, _T]) -> _Callable[_P, _T]:
 
-        def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _Any:
+        def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
             qualname = func.__qualname__
             if "." not in qualname:
                 raise ValueError("The function must be a method of a class")
 
-            if saved_dir_path is None:
-                return
+            if saved_dir_path is not None:
+                file_path = (
+                    saved_dir_path / f"{qualname.replace('.', '__')}.{format}"
+                    if saved_file_path is None
+                    else saved_dir_path / saved_file_path
+                )
 
-            file_path = (
-                saved_dir_path / f"{qualname.replace('.', '__')}.{format}"
-                if saved_file_path is None
-                else saved_dir_path / saved_file_path
-            )
+                expected_data: _Union[
+                    _List[_Dict[str, _Any]], _Dict[str, _Any], bytes
+                ] = {}
+                if _os.path.exists(file_path):
+                    with open(file_path, encoding=encoding) as file:
+                        match format:
+                            case "json":
+                                expected_data = _cast(
+                                    _Union[_List[_Dict[str, _Any]], _Dict[str, _Any]],
+                                    _json.load(file),
+                                )
+                            case "txt":
+                                expected_data_str = file.read()
+                                expected_data = expected_data_str.encode(encoding)
 
-            expected_data: _Union[_List[_Dict[str, _Any]], _Dict[str, _Any], bytes] = {}
-            if _os.path.exists(file_path):
-                with open(file_path, encoding=encoding) as file:
-                    match format:
-                        case "json":
-                            expected_data = _cast(
-                                _Union[_List[_Dict[str, _Any]], _Dict[str, _Any]],
-                                _json.load(file),
-                            )
-                        case "txt":
-                            expected_data_str = file.read()
-                            expected_data = expected_data_str.encode(encoding)
-
-            kwargs["expected_data"] = expected_data
-            kwargs["saved_path"] = file_path
+                kwargs["expected_data"] = expected_data
+                kwargs["saved_path"] = file_path
 
             data = func(*args, **kwargs)
 
