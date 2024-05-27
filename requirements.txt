@@ -8,7 +8,7 @@ sqlalchemy_utils
 email-validator
 deepdiff
 unidecode
-pysql-repo==0.7.3.2
+pysql-repo==0.7.3.3
 loguru
 opentelemetry-api
 opentelemetry-exporter-otlp-proto-http
