@@ -703,16 +703,18 @@ def load_expected_data(
     saved_file_path: _Optional[str] = None,
     format: str = "json",
     encoding: str = "utf-8",
-) -> _Callable[[_Callable[_P, _T]], _Callable[_P, _T]]:
+) -> _Callable[[_Callable[..., _T]], _Callable[..., _T]]:
 
-    def decorator(func: _Callable[_P, _T]) -> _Callable[_P, _T]:
+    def decorator(func: _Callable[..., _T]) -> _Callable[..., _T]:
 
-        def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+        def wrapper(self: _Any, *args: _P.args, **kwargs: _P.kwargs) -> _T:
             qualname = func.__qualname__
             if "." not in qualname:
                 raise ValueError("The function must be a method of a class")
 
-            if saved_dir_path is not None:
+            if saved_dir_path is None:
+                data = func(*args, **kwargs)
+            else:
                 file_path = (
                     saved_dir_path / f"{qualname.replace('.', '__')}.{format}"
                     if saved_file_path is None
@@ -734,10 +736,7 @@ def load_expected_data(
                                 expected_data_str = file.read()
                                 expected_data = expected_data_str.encode(encoding)
 
-                kwargs["expected_data"] = expected_data
-                kwargs["saved_path"] = file_path
-
-            data = func(*args, **kwargs)
+                data = func(self, expected_data, file_path, *args, **kwargs)
 
             return data
 
